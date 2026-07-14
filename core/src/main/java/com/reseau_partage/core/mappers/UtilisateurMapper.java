@@ -8,20 +8,21 @@ public class UtilisateurMapper {
     public static UtilisateurPojo toPojo(Utilisateur entity) {
         if (entity == null) return null;
         return new UtilisateurPojo(
-                entity.getId(),
-                entity.getNom(),
-                entity.getPrenom(),
-                entity.getEmail(),
-                entity.getTelephone(),
-                entity.getProfil_id(),
-                entity.getStructureId(),
-                entity.getStructureNom(),
-                entity.getTypeActivite(),
-                entity.getTypeService(),
-                entity.getLocalisation(),
-                entity.getActif(),
-                entity.getDateCreation(),
-                entity.getDateModification()
+            entity.getId(),
+            entity.getNom(),
+            entity.getPrenom(),
+            entity.getEmail(),
+            entity.getTelephone(),
+            entity.getProfil_id(),
+            entity.getStructureId(),
+            entity.getStructureNom(),
+            entity.getTypeActivite(),
+            entity.getTypeService(),
+            entity.getLocalisation(),
+            entity.getSexe(),
+            entity.getActif(),
+            entity.getDateCreation(),
+            entity.getDateModification()
         );
     }
 
@@ -34,11 +35,12 @@ public class UtilisateurMapper {
         utilisateur.setEmail(pojo.getEmail());
         utilisateur.setTelephone(pojo.getTelephone());
         utilisateur.setProfil_id(pojo.getProfil_id());
-        utilisateur.setStructureId(pojo.getStructureId());
-        utilisateur.setStructureNom(pojo.getStructureNom());
+        utilisateur.setStructureId(pojo.getFermeId());
+        utilisateur.setStructureNom(pojo.getFermeNom());
         utilisateur.setTypeActivite(pojo.getTypeActivite());
         utilisateur.setTypeService(pojo.getTypeService());
         utilisateur.setLocalisation(pojo.getLocalisation());
+        utilisateur.setSexe(pojo.getSexe());
         utilisateur.setActif(pojo.getActif());
         utilisateur.setDateCreation(pojo.getDateCreation());
         utilisateur.setDateModification(pojo.getDateModification());
