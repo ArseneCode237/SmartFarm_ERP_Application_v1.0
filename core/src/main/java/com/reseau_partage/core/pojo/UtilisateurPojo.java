@@ -10,11 +10,12 @@ public class UtilisateurPojo {
     private String email;
     private String telephone;
     private Long profil_id;
-    private String structureId;
-    private String structureNom;
+    private String fermeId;
+    private String fermeNom;
     private String typeActivite;
     private String typeService;
     private String localisation;
+    private String sexe;
     private Boolean actif;
     private Date dateCreation;
     private Date dateModification;
@@ -23,20 +24,21 @@ public class UtilisateurPojo {
     }
 
     public UtilisateurPojo(Long id, String nom, String prenom, String email, String telephone,
-                           Long profil_id, String structureId, String structureNom,
+                           Long profil_id, String fermeId, String fermeNom,
                            String typeActivite, String typeService, String localisation,
-                           Boolean actif, Date dateCreation, Date dateModification) {
+                           String sexe, Boolean actif, Date dateCreation, Date dateModification) {
         this.id = id;
         this.nom = nom;
         this.prenom = prenom;
         this.email = email;
         this.telephone = telephone;
         this.profil_id = profil_id;
-        this.structureId = structureId;
-        this.structureNom = structureNom;
+        this.fermeId = fermeId;
+        this.fermeNom = fermeNom;
         this.typeActivite = typeActivite;
         this.typeService = typeService;
         this.localisation = localisation;
+        this.sexe = sexe;
         this.actif = actif;
         this.dateCreation = dateCreation;
         this.dateModification = dateModification;
@@ -68,12 +70,15 @@ public class UtilisateurPojo {
 
     public Long getProfil_id() { return profil_id; }
     public void setProfil_id(Long profil_id) { this.profil_id = profil_id; }
-
-    public String getStructureId() { return structureId; }
-    public void setStructureId(String structureId) { this.structureId = structureId; }
-
-    public String getStructureNom() { return structureNom; }
-    public void setStructureNom(String structureNom) { this.structureNom = structureNom; }
+    
+    public String getFermeId() { return fermeId; }
+    public void setFermeId(String fermeId) { this.fermeId = fermeId; }
+    
+    public String getFermeNom() { return fermeNom; }
+    public void setFermeNom(String fermeNom) { this.fermeNom = fermeNom; }
+    
+    public String getSexe() { return sexe; }
+    public void setSexe(String sexe) { this.sexe = sexe; }
 
     public Boolean getActif() { return actif; }
     public void setActif(Boolean actif) { this.actif = actif; }
