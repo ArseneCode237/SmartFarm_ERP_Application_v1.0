@@ -1,6 +1,7 @@
 package com.reseau_partage.core.pojo;
 
 import java.sql.Date;
+import java.util.List;
 
 public class UtilisateurPojo {
 
@@ -12,8 +13,8 @@ public class UtilisateurPojo {
     private Long profil_id;
     private String fermeId;
     private String fermeNom;
-    private String typeActivite;
-    private String typeService;
+    private List<String> typeActivite;
+    private List<String> typeService;
     private String localisation;
     private String sexe;
     private Boolean actif;
@@ -25,7 +26,7 @@ public class UtilisateurPojo {
 
     public UtilisateurPojo(Long id, String nom, String prenom, String email, String telephone,
                            Long profil_id, String fermeId, String fermeNom,
-                           String typeActivite, String typeService, String localisation,
+                           List<String> typeActivite, List<String> typeService, String localisation,
                            String sexe, Boolean actif, Date dateCreation, Date dateModification) {
         this.id = id;
         this.nom = nom;
@@ -59,11 +60,11 @@ public class UtilisateurPojo {
     public String getTelephone() { return telephone; }
     public void setTelephone(String telephone) { this.telephone = telephone; }
 
-    public String getTypeActivite() { return typeActivite; }
-    public void setTypeActivite(String typeActivite) { this.typeActivite = typeActivite; }
+    public List<String> getTypeActivite() { return typeActivite; }
+    public void setTypeActivite(List<String> typeActivite) { this.typeActivite = typeActivite; }
 
-    public String getTypeService() { return typeService; }
-    public void setTypeService(String typeService) { this.typeService = typeService; }
+    public List<String> getTypeService() { return typeService; }
+    public void setTypeService(List<String> typeService) { this.typeService = typeService; }
 
     public String getLocalisation() { return localisation; }
     public void setLocalisation(String localisation) { this.localisation = localisation; }

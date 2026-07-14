@@ -2,12 +2,18 @@ package com.reseau_partage.core.entities;
 
 import java.io.Serializable;
 import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 
 @Entity
@@ -28,6 +34,7 @@ public class Utilisateur implements Serializable {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(unique = true)
     private String telephone;
 
     @Column(nullable = false)
@@ -37,11 +44,20 @@ public class Utilisateur implements Serializable {
 
     private String structureId;
 
+    @Column(unique = true)
     private String structureNom;
 
-    private String typeActivite;
+    @ElementCollection
+    @CollectionTable(name = "utilisateur_type_activites", joinColumns = @JoinColumn(name = "utilisateur_id"))
+    @Column(name = "type_activite", nullable = false)
+    @OrderColumn(name = "position")
+    private List<String> typeActivite = new ArrayList<>();
 
-    private String typeService;
+    @ElementCollection
+    @CollectionTable(name = "utilisateur_type_services", joinColumns = @JoinColumn(name = "utilisateur_id"))
+    @Column(name = "type_service", nullable = false)
+    @OrderColumn(name = "position")
+    private List<String> typeService = new ArrayList<>();
 
     private String localisation;
     private String sexe;
@@ -61,7 +77,7 @@ public class Utilisateur implements Serializable {
 
     public Utilisateur(Long id, String nom, String prenom, String email, String telephone,
                        String motDePasse, Long profil_id, String structureId, String structureNom,
-                       String typeActivite, String typeService, String localisation,
+                       List<String> typeActivite, List<String> typeService, String localisation,
                        Boolean actif, int tentative_echec,
                        Date dateCreation, Date bloque_jusqu_a, Date dateModification) {
         this.id = id;
@@ -73,8 +89,8 @@ public class Utilisateur implements Serializable {
         this.profil_id = profil_id;
         this.structureId = structureId;
         this.structureNom = structureNom;
-        this.typeActivite = typeActivite;
-        this.typeService = typeService;
+        this.typeActivite = typeActivite == null ? new ArrayList<>() : new ArrayList<>(typeActivite);
+        this.typeService = typeService == null ? new ArrayList<>() : new ArrayList<>(typeService);
         this.localisation = localisation;
         this.actif = actif;
         this.tentative_echec = tentative_echec;
@@ -98,11 +114,11 @@ public class Utilisateur implements Serializable {
     public String getTelephone() { return telephone; }
     public void setTelephone(String telephone) { this.telephone = telephone; }
 
-    public String getTypeActivite() { return typeActivite; }
-    public void setTypeActivite(String typeActivite) { this.typeActivite = typeActivite; }
+    public List<String> getTypeActivite() { return typeActivite; }
+    public void setTypeActivite(List<String> typeActivite) { this.typeActivite = typeActivite == null ? new ArrayList<>() : new ArrayList<>(typeActivite); }
 
-    public String getTypeService() { return typeService; }
-    public void setTypeService(String typeService) { this.typeService = typeService; }
+    public List<String> getTypeService() { return typeService; }
+    public void setTypeService(List<String> typeService) { this.typeService = typeService == null ? new ArrayList<>() : new ArrayList<>(typeService); }
 
     public String getLocalisation() { return localisation; }
     public void setLocalisation(String localisation) { this.localisation = localisation; }
