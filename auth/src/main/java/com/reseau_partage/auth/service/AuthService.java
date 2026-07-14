@@ -62,6 +62,7 @@ public class AuthService {
         }
         validateTypeActivite(request.getTypeActivite());
         validateTypeService(request.getTypeService());
+        validateSexe(request.getSexe());
 
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setNom(request.getNom());
@@ -72,6 +73,7 @@ public class AuthService {
         utilisateur.setStructureNom(request.getFermeNom());
         utilisateur.setTypeActivite(request.getTypeActivite());
         utilisateur.setTypeService(request.getTypeService());
+        utilisateur.setSexe(request.getSexe());
         utilisateur.setLocalisation(request.getLocalisation());
         utilisateur.setMotDePasse(passwordEncoder.encode(request.getPassword()));
         utilisateur.setActif(true);
@@ -84,6 +86,14 @@ public class AuthService {
         utilisateurRepository.save(utilisateur);
 
         return createSessionResponse(utilisateur);
+    }
+
+    private void validateSexe(String sexe) {
+        if (sexe == null) return;
+        String normalized = sexe.trim().toLowerCase();
+        if (!normalized.equals("masculin") && !normalized.equals("feminin")) {
+            throw new IllegalArgumentException("Sexe invalide. Valeurs acceptées : Masculin, Feminin.");
+        }
     }
 
     private void validateTypeActivite(String typeActivite) {
@@ -185,7 +195,7 @@ public class AuthService {
         String refreshToken = jwtUtils.generateRefreshToken(userDetails, session.getId());
         session.setTokenHash(hash(refreshToken));
         sessionRepository.save(session);
-        String token = jwtUtils.generateToken(userDetails, Map.of("sid", session.getId(), "structureId", String.valueOf(utilisateur.getStructureId())));
+        String token = jwtUtils.generateToken(userDetails, Map.of("sid", session.getId(), "fermeId", String.valueOf(utilisateur.getStructureId())));
         return AuthResponse.builder().token(token).refreshToken(refreshToken)
                 .email(utilisateur.getEmail())
                 .user(UtilisateurMapper.toPojo(utilisateur))
