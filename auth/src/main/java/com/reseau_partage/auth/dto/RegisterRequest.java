@@ -1,6 +1,9 @@
 package com.reseau_partage.auth.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import java.util.List;
 
 public class RegisterRequest {
     private String nom;
@@ -11,9 +14,11 @@ public class RegisterRequest {
     private String fermeId;
     private String fermeNom;
     @JsonProperty("type_activite")
-    private String typeActivite;
+    @JsonDeserialize(using = CommaSeparatedListDeserializer.class)
+    private List<String> typeActivite;
     @JsonProperty("type_service")
-    private String typeService;
+    @JsonDeserialize(using = CommaSeparatedListDeserializer.class)
+    private List<String> typeService;
     private String localisation;
     private String sexe;
 
@@ -22,7 +27,7 @@ public class RegisterRequest {
 
     public RegisterRequest(String nom, String prenom, String email, String password,
                            String telephone, String fermeId, String fermeNom,
-                           String typeActivite, String typeService, String localisation, String sexe) {
+                           List<String> typeActivite, List<String> typeService, String localisation, String sexe) {
         this.nom = nom;
         this.prenom = prenom;
         this.email = email;
@@ -92,19 +97,19 @@ public class RegisterRequest {
         this.fermeNom = fermeNom;
     }
 
-    public String getTypeActivite() {
+    public List<String> getTypeActivite() {
         return typeActivite;
     }
 
-    public void setTypeActivite(String typeActivite) {
+    public void setTypeActivite(List<String> typeActivite) {
         this.typeActivite = typeActivite;
     }
 
-    public String getTypeService() {
+    public List<String> getTypeService() {
         return typeService;
     }
 
-    public void setTypeService(String typeService) {
+    public void setTypeService(List<String> typeService) {
         this.typeService = typeService;
     }
 
@@ -136,8 +141,8 @@ public class RegisterRequest {
         private String telephone;
         private String fermeId;
         private String fermeNom;
-        private String typeActivite;
-        private String typeService;
+        private List<String> typeActivite;
+        private List<String> typeService;
         private String localisation;
         private String sexe;
 
@@ -176,12 +181,12 @@ public class RegisterRequest {
             return this;
         }
 
-        public RegisterRequestBuilder typeActivite(String typeActivite) {
+        public RegisterRequestBuilder typeActivite(List<String> typeActivite) {
             this.typeActivite = typeActivite;
             return this;
         }
 
-        public RegisterRequestBuilder typeService(String typeService) {
+        public RegisterRequestBuilder typeService(List<String> typeService) {
             this.typeService = typeService;
             return this;
         }
