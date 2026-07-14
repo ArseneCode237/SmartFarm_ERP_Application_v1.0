@@ -3,6 +3,9 @@ package com.reseau_partage.auth.service;
 import com.reseau_partage.auth.dto.AuthResponse;
 import com.reseau_partage.auth.dto.LoginRequest;
 import com.reseau_partage.auth.dto.RegisterRequest;
+import com.reseau_partage.auth.dto.UpdateProfileRequest;
+import com.reseau_partage.auth.dto.ProfileResponse;
+import com.reseau_partage.auth.exception.ConflictException;
 import com.reseau_partage.auth.security.JwtUtils;
 import com.reseau_partage.core.entities.Utilisateur;
 import com.reseau_partage.core.entities.Profil;
@@ -23,6 +26,10 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.time.Instant;
 import java.util.Map;
+import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.text.Normalizer;
 import java.util.UUID;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -58,21 +65,37 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (utilisateurRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email déjà utilisé");
+            throw new ConflictException("Email deja utilise");
         }
-        validateTypeActivite(request.getTypeActivite());
-        validateTypeService(request.getTypeService());
+        String telephone = normalizeTelephone(request.getTelephone());
+        if (telephone != null && utilisateurRepository.existsByTelephone(telephone)) {
+            throw new ConflictException("Numero de telephone deja utilise");
+        }
+        String fermeNom = normalizeFermeNom(request.getFermeNom());
+        if (fermeNom != null && utilisateurRepository.existsByStructureNomIgnoreCase(fermeNom)) {
+            throw new ConflictException("Nom de ferme deja utilise");
+        }
+        List<String> typeActivites = normalizeAndValidateChoices(
+                request.getTypeActivite(),
+                Set.of("agriculture", "elevage", "aviculture", "pisciculture"),
+                "activite"
+        );
+        List<String> typeServices = normalizeAndValidateChoices(
+                request.getTypeService(),
+                Set.of("stock", "vaccination", "comptabilite", "maintenance", "videosurveillance"),
+                "service"
+        );
         validateSexe(request.getSexe());
 
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setNom(request.getNom());
         utilisateur.setPrenom(request.getPrenom());
         utilisateur.setEmail(request.getEmail());
-        utilisateur.setTelephone(request.getTelephone());
+        utilisateur.setTelephone(telephone);
         utilisateur.setStructureId(request.getFermeId());
-        utilisateur.setStructureNom(request.getFermeNom());
-        utilisateur.setTypeActivite(request.getTypeActivite());
-        utilisateur.setTypeService(request.getTypeService());
+        utilisateur.setStructureNom(fermeNom);
+        utilisateur.setTypeActivite(typeActivites);
+        utilisateur.setTypeService(typeServices);
         utilisateur.setSexe(request.getSexe());
         utilisateur.setLocalisation(request.getLocalisation());
         utilisateur.setMotDePasse(passwordEncoder.encode(request.getPassword()));
@@ -85,7 +108,7 @@ public class AuthService {
 
         utilisateurRepository.save(utilisateur);
 
-        return createSessionResponse(utilisateur);
+        return createSessionResponse(utilisateur, "Compte cree avec succes.");
     }
 
     private void validateSexe(String sexe) {
@@ -106,6 +129,21 @@ public class AuthService {
         }
     }
 
+    private String normalizeTelephone(String telephone) {
+        if (telephone == null || telephone.isBlank()) {
+            return null;
+        }
+        String normalized = telephone.trim().replaceAll("[\\s().-]", "");
+        return normalized.startsWith("00") ? "+" + normalized.substring(2) : normalized;
+    }
+
+    private String normalizeFermeNom(String fermeNom) {
+        if (fermeNom == null || fermeNom.isBlank()) {
+            return null;
+        }
+        return fermeNom.trim();
+    }
+
     private void validateTypeService(String typeService) {
         if (typeService == null) {
             return;
@@ -114,6 +152,28 @@ public class AuthService {
         if (!normalized.equals("stock") && !normalized.equals("vaccination") && !normalized.equals("comptabilite") && !normalized.equals("maintenance") && !normalized.equals("videosurveillance")) {
             throw new IllegalArgumentException("Type de service invalide. Valeurs acceptées : stock, vaccination, comptabilite, maintenance, videosurveillance.");
         }
+    }
+
+    private List<String> normalizeAndValidateChoices(List<String> choices, Set<String> allowedChoices, String label) {
+        if (choices == null || choices.isEmpty()) {
+            return List.of();
+        }
+
+        LinkedHashSet<String> normalizedChoices = new LinkedHashSet<>();
+        for (String choice : choices) {
+            if (choice == null || choice.isBlank()) {
+                throw new IllegalArgumentException("Chaque " + label + " selectionne doit etre renseigne.");
+            }
+
+            String normalized = Normalizer.normalize(choice.trim().toLowerCase(), Normalizer.Form.NFD)
+                    .replaceAll("\\p{M}", "");
+            if (!allowedChoices.contains(normalized)) {
+                throw new IllegalArgumentException("Type d'" + label + " invalide : " + choice
+                        + ". Valeurs acceptees : " + String.join(", ", allowedChoices) + ".");
+            }
+            normalizedChoices.add(normalized);
+        }
+        return List.copyOf(normalizedChoices);
     }
 
     @Transactional
@@ -128,7 +188,7 @@ public class AuthService {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé avec l'email: " + request.getEmail()));
 
-        return createSessionResponse(utilisateur);
+        return createSessionResponse(utilisateur, "Connexion reussie.");
     }
 
     @Transactional
@@ -145,7 +205,7 @@ public class AuthService {
         sessionRepository.save(session);
         Utilisateur utilisateur = utilisateurRepository.findByEmail(jwtUtils.extractUsername(refreshToken))
                 .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouve"));
-        return createSessionResponse(utilisateur);
+        return createSessionResponse(utilisateur, "Session renouvelee avec succes.");
     }
 
     @Transactional
@@ -167,9 +227,12 @@ public class AuthService {
     }
 
     @Transactional
-    public void changePassword(String email, String currentPassword, String newPassword) {
+    public void changePassword(String email, String currentPassword, String newPassword, String confirmNewPassword) {
         if (newPassword.length() < 8) {
             throw new IllegalArgumentException("Le nouveau mot de passe doit contenir au moins 8 caracteres");
+        }
+        if (!newPassword.equals(confirmNewPassword)) {
+            throw new IllegalArgumentException("La confirmation du nouveau mot de passe ne correspond pas.");
         }
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouve"));
@@ -182,7 +245,82 @@ public class AuthService {
         logoutAll(email);
     }
 
-    private AuthResponse createSessionResponse(Utilisateur utilisateur) {
+    @Transactional
+    public ProfileResponse updateProfile(String currentEmail, UpdateProfileRequest request) {
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouve"));
+
+        boolean emailChanged = false;
+        if (request.getNom() != null) {
+            utilisateur.setNom(requiredText(request.getNom(), "Le nom"));
+        }
+        if (request.getPrenom() != null) {
+            utilisateur.setPrenom(requiredText(request.getPrenom(), "Le prenom"));
+        }
+        if (request.getEmail() != null) {
+            String newEmail = requiredText(request.getEmail(), "L'adresse email").toLowerCase();
+            emailChanged = !newEmail.equalsIgnoreCase(utilisateur.getEmail());
+            if (emailChanged && utilisateurRepository.existsByEmail(newEmail)) {
+                throw new ConflictException("Cette adresse email est deja utilisee.");
+            }
+            utilisateur.setEmail(newEmail);
+        }
+        if (request.getTelephone() != null) {
+            String telephone = normalizeTelephone(request.getTelephone());
+            if (telephone != null && !telephone.equals(utilisateur.getTelephone())
+                    && utilisateurRepository.existsByTelephone(telephone)) {
+                throw new ConflictException("Ce numero de telephone est deja utilise.");
+            }
+            utilisateur.setTelephone(telephone);
+        }
+        if (request.getFermeId() != null) {
+            utilisateur.setStructureId(request.getFermeId().trim());
+        }
+        if (request.getFermeNom() != null) {
+            String fermeNom = normalizeFermeNom(request.getFermeNom());
+            if (fermeNom != null && !fermeNom.equalsIgnoreCase(utilisateur.getStructureNom())
+                    && utilisateurRepository.existsByStructureNomIgnoreCase(fermeNom)) {
+                throw new ConflictException("Ce nom de ferme est deja utilise.");
+            }
+            utilisateur.setStructureNom(fermeNom);
+        }
+        if (request.getTypeActivite() != null) {
+            utilisateur.setTypeActivite(normalizeAndValidateChoices(request.getTypeActivite(),
+                    Set.of("agriculture", "elevage", "aviculture", "pisciculture"), "activite"));
+        }
+        if (request.getTypeService() != null) {
+            utilisateur.setTypeService(normalizeAndValidateChoices(request.getTypeService(),
+                    Set.of("stock", "vaccination", "comptabilite", "maintenance", "videosurveillance"), "service"));
+        }
+        if (request.getLocalisation() != null) {
+            utilisateur.setLocalisation(request.getLocalisation().trim());
+        }
+        if (request.getSexe() != null) {
+            validateSexe(request.getSexe());
+            utilisateur.setSexe(request.getSexe().trim().toLowerCase());
+        }
+
+        utilisateur.setDateModification(Date.valueOf(LocalDate.now()));
+        utilisateurRepository.save(utilisateur);
+
+        if (emailChanged) {
+            logoutAll(utilisateur.getEmail());
+            return new ProfileResponse(true, 200,
+                    "Profil modifie. Votre adresse email a change : veuillez vous reconnecter.", true,
+                    UtilisateurMapper.toPojo(utilisateur));
+        }
+        return new ProfileResponse(true, 200, "Profil modifie avec succes.", false,
+                UtilisateurMapper.toPojo(utilisateur));
+    }
+
+    private String requiredText(String value, String fieldLabel) {
+        if (value.isBlank()) {
+            throw new IllegalArgumentException(fieldLabel + " est obligatoire.");
+        }
+        return value.trim();
+    }
+
+    private AuthResponse createSessionResponse(Utilisateur utilisateur, String message) {
         Session session = new Session();
         session.setUtilisateurId(utilisateur.getId());
         session.setTokenHash(UUID.randomUUID().toString());
@@ -196,7 +334,7 @@ public class AuthService {
         session.setTokenHash(hash(refreshToken));
         sessionRepository.save(session);
         String token = jwtUtils.generateToken(userDetails, Map.of("sid", session.getId(), "fermeId", String.valueOf(utilisateur.getStructureId())));
-        return AuthResponse.builder().token(token).refreshToken(refreshToken)
+        return AuthResponse.builder().message(message).token(token).refreshToken(refreshToken)
                 .email(utilisateur.getEmail())
                 .user(UtilisateurMapper.toPojo(utilisateur))
                 .build();

@@ -21,6 +21,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 import java.util.List;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 @EnableWebSecurity
@@ -44,8 +45,21 @@ public class SecurityConfig {
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/api/auth/login")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/api/auth/refresh")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/api/auth/test")).authenticated()
-                        .requestMatchers(AntPathRequestMatcher.antMatcher("/api/auth/**")).permitAll()
-                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
+                )
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authenticationException) -> {
+                            response.setStatus(401);
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"success\":false,\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Authentification requise : votre session est absente, invalide ou expirée.\",\"fieldErrors\":{}}");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(403);
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"success\":false,\"status\":403,\"error\":\"Forbidden\",\"message\":\"Vous n'êtes pas autorisé à effectuer cette action.\",\"fieldErrors\":{}}");
+                        })
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
