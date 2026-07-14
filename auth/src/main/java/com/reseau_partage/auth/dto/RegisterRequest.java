@@ -15,13 +15,14 @@ public class RegisterRequest {
     @JsonProperty("type_service")
     private String typeService;
     private String localisation;
+    private String sexe;
 
     public RegisterRequest() {
     }
 
     public RegisterRequest(String nom, String prenom, String email, String password,
                            String telephone, String fermeId, String fermeNom,
-                           String typeActivite, String typeService, String localisation) {
+                           String typeActivite, String typeService, String localisation, String sexe) {
         this.nom = nom;
         this.prenom = prenom;
         this.email = email;
@@ -32,6 +33,7 @@ public class RegisterRequest {
         this.typeActivite = typeActivite;
         this.typeService = typeService;
         this.localisation = localisation;
+        this.sexe = sexe;
     }
 
     public String getNom() {
@@ -114,6 +116,14 @@ public class RegisterRequest {
         this.localisation = localisation;
     }
 
+    public String getSexe() {
+        return sexe;
+    }
+
+    public void setSexe(String sexe) {
+        this.sexe = sexe;
+    }
+
     public static RegisterRequestBuilder builder() {
         return new RegisterRequestBuilder();
     }
@@ -129,6 +139,7 @@ public class RegisterRequest {
         private String typeActivite;
         private String typeService;
         private String localisation;
+        private String sexe;
 
         public RegisterRequestBuilder nom(String nom) {
             this.nom = nom;
@@ -180,8 +191,13 @@ public class RegisterRequest {
             return this;
         }
 
+        public RegisterRequestBuilder sexe(String sexe) {
+            this.sexe = sexe;
+            return this;
+        }
+
         public RegisterRequest build() {
-            return new RegisterRequest(nom, prenom, email, password, telephone, fermeId, fermeNom, typeActivite, typeService, localisation);
+            return new RegisterRequest(nom, prenom, email, password, telephone, fermeId, fermeNom, typeActivite, typeService, localisation, sexe);
         }
     }
 }
