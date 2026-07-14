@@ -44,6 +44,7 @@ public class Utilisateur implements Serializable {
     private String typeService;
 
     private String localisation;
+    private String sexe;
 
     @Column(nullable = false)
     private Boolean actif;
@@ -106,6 +107,9 @@ public class Utilisateur implements Serializable {
     public String getLocalisation() { return localisation; }
     public void setLocalisation(String localisation) { this.localisation = localisation; }
 
+    public String getSexe() { return sexe; }
+    public void setSexe(String sexe) { this.sexe = sexe; }
+
     public String getMotDePasse() { return motDePasse; }
     public void setMotDePasse(String motDePasse) { this.motDePasse = motDePasse; }
 
@@ -147,6 +151,7 @@ public class Utilisateur implements Serializable {
                 ", typeActivite='" + typeActivite + '\'' +
                 ", typeService='" + typeService + '\'' +
                 ", localisation='" + localisation + '\'' +
+                ", sexe='" + sexe + '\'' +
                 ", actif=" + actif +
                 ", tentative_echec=" + tentative_echec +
                 ", dateCreation=" + dateCreation +
