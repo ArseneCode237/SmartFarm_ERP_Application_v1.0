@@ -3,6 +3,9 @@ package com.reseau_partage.auth.dto;
 import com.reseau_partage.core.pojo.UtilisateurPojo;
 
 public class AuthResponse {
+    private final boolean success = true;
+    private final int status = 200;
+    private String message;
     private String token;
     private String refreshToken;
     private String email;
@@ -11,12 +14,19 @@ public class AuthResponse {
     public AuthResponse() {
     }
 
-    public AuthResponse(String token, String refreshToken, String email, UtilisateurPojo user) {
+    public AuthResponse(String message, String token, String refreshToken, String email, UtilisateurPojo user) {
+        this.message = message;
         this.token = token;
         this.refreshToken = refreshToken;
         this.email = email;
         this.user = user;
     }
+
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+
+    public boolean isSuccess() { return success; }
+    public int getStatus() { return status; }
 
     public String getToken() {
         return token;
@@ -50,6 +60,7 @@ public class AuthResponse {
     }
 
     public static class AuthResponseBuilder {
+        private String message;
         private String token;
         private String refreshToken;
         private String email;
@@ -75,8 +86,13 @@ public class AuthResponse {
             return this;
         }
 
+        public AuthResponseBuilder message(String message) {
+            this.message = message;
+            return this;
+        }
+
         public AuthResponse build() {
-            return new AuthResponse(token, refreshToken, email, user);
+            return new AuthResponse(message, token, refreshToken, email, user);
         }
     }
 }
