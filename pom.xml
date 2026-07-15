@@ -17,6 +17,7 @@
         <module>core</module>
         <module>discovery</module>
         <module>auth</module>
+        <module>organisation</module>
         <module>gateway</module>
     </modules>
 
