@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.reseau_partage.core.entities.StatutFerme;
 import com.reseau_partage.organisation.dto.FermeRequest;
+import com.reseau_partage.organisation.dto.StatutRequest;
 import com.reseau_partage.organisation.service.OrganisationService;
 
 import jakarta.validation.Valid;
@@ -75,6 +77,27 @@ public class FermeController {
     public ResponseEntity<Void> archive(@PathVariable Long id) {
         service.archiveFerme(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * PATCH /api/organisation/fermes/{id}/statut
+     * Changer le statut opérationnel d'une ferme : ACTIF, INACTIF, MAINTENANCE.
+     * L'archivage définitif passe par /archiver (ADMIN uniquement).
+     *
+     * Corps attendu : { "statut": "MAINTENANCE" }
+     */
+    @PatchMapping("/{id}/statut")
+    public ResponseEntity<Map<String, Object>> changeStatut(@PathVariable Long id,
+                                                            @Valid @RequestBody StatutRequest request) {
+        StatutFerme statut;
+        try {
+            statut = StatutFerme.valueOf(request.statut().trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "Statut invalide : " + request.statut() +
+                    ". Valeurs acceptées : ACTIF, INACTIF, MAINTENANCE.");
+        }
+        return ResponseEntity.ok(service.changeFermeStatut(id, statut));
     }
 
     /**
