@@ -33,6 +33,10 @@ import com.reseau_partage.organisation.exception.ConflictException;
 import com.reseau_partage.organisation.exception.ResourceNotFoundException;
 import com.reseau_partage.organisation.exception.StatutTransitionException;
 
+import java.text.Normalizer;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 @Service
 @Transactional
 public class OrganisationService {
@@ -51,13 +55,13 @@ public class OrganisationService {
       throw new ConflictException("Une ferme portant ce nom existe deja dans ce pays.");
     Ferme f = new Ferme();
     apply(f, r);
-    f.setStatut(StatutFerme.ACTIVE);
+    f.setStatut(StatutFerme.ACTIF);
     return ferme(fermes.save(f));
   }
 
   @Transactional(readOnly = true)
   public List<Map<String, Object>> listFermes() {
-    return fermes.findByStatut(StatutFerme.ACTIVE).stream().map(this::ferme).toList();
+    return fermes.findByStatutNot(StatutFerme.ARCHIVEE).stream().map(this::ferme).toList();
   }
 
   @Transactional(readOnly = true)
@@ -80,6 +84,18 @@ public class OrganisationService {
     }
   }
 
+  public Map<String, Object> changeFermeStatut(Long id, StatutFerme nouveauStatut) {
+    if (nouveauStatut == StatutFerme.ARCHIVEE)
+      throw new IllegalArgumentException(
+          "Utilisez l'endpoint /archiver pour archiver une ferme.");
+    Ferme f = getFermeEntity(id);
+    if (f.getStatut() == StatutFerme.ARCHIVEE)
+      throw new IllegalArgumentException(
+          "Une ferme archivée ne peut plus changer de statut.");
+    f.setStatut(nouveauStatut);
+    return ferme(f);
+  }
+
   @Transactional(readOnly = true)
   public Map<String, Object> fermeStats(Long id) {
     Ferme f = getFermeEntity(id);
@@ -90,8 +106,8 @@ public class OrganisationService {
 
   public Map<String, Object> createSite(SiteRequest r) {
     Ferme f = getFermeEntity(r.fermeId());
-    if (f.getStatut() != StatutFerme.ACTIVE)
-      throw new IllegalArgumentException("La ferme doit etre active.");
+    if (f.getStatut() == StatutFerme.ARCHIVEE)
+      throw new IllegalArgumentException("Impossible de créer un site sur une ferme archivée.");
     if (sites.existsByNomAndFermeId(r.nom(), f.getId()))
       throw new ConflictException("Un site portant ce nom existe deja dans cette ferme.");
     Site s = new Site();
@@ -233,6 +249,28 @@ public class OrganisationService {
     f.setLogoUrl(r.logoUrl());
     f.setTelephoneContact(r.telephoneContact());
     f.setEmailContact(r.emailContact());
+    f.setLocalisation(r.localisation());
+    f.setTypeActivite(normalizeAndValidate(r.typeActivite(),
+            Set.of("agriculture", "elevage", "aviculture", "pisciculture"), "activite"));
+    f.setTypeService(normalizeAndValidate(r.typeService(),
+            Set.of("stock", "vaccination", "comptabilite", "maintenance", "videosurveillance"), "service"));
+  }
+
+  /** Normalise et valide une liste de choix libres contre un ensemble autorisé. */
+  private List<String> normalizeAndValidate(List<String> choices, Set<String> allowed, String label) {
+    if (choices == null || choices.isEmpty()) return List.of();
+    LinkedHashSet<String> result = new LinkedHashSet<>();
+    for (String choice : choices) {
+      if (choice == null || choice.isBlank())
+        throw new IllegalArgumentException("Chaque " + label + " sélectionné doit être renseigné.");
+      String normalized = Normalizer.normalize(choice.trim().toLowerCase(), Normalizer.Form.NFD)
+              .replaceAll("\\p{M}", "");
+      if (!allowed.contains(normalized))
+        throw new IllegalArgumentException("Type d'" + label + " invalide : " + choice
+                + ". Valeurs acceptées : " + String.join(", ", allowed) + ".");
+      result.add(normalized);
+    }
+    return List.copyOf(result);
   }
 
   private void apply(Site s, SiteRequest r) {
@@ -346,6 +384,9 @@ public class OrganisationService {
     m.put("logoUrl", f.getLogoUrl());
     m.put("telephoneContact", f.getTelephoneContact());
     m.put("emailContact", f.getEmailContact());
+    m.put("localisation", f.getLocalisation());
+    m.put("typeActivite", f.getTypeActivite());
+    m.put("typeService", f.getTypeService());
     m.put("statut", f.getStatut());
     m.put("dateCreation", f.getDateCreation());
     m.putAll(fermeStats(f.getId()));
