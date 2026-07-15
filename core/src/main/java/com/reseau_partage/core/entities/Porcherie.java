@@ -7,34 +7,37 @@ import jakarta.persistence.Entity;
 /**
  * Sous-type de Structure pour les porcheries (élevage porcin).
  * Discriminator value : "PORCHERIE"
+ *
+ * Colonnes partagées avec d'autres sous-types (SINGLE_TABLE) :
+ *   capacite_max_animaux, type_ventilation, duree_vide_sanitaire_jours,
+ *   systeme_abreuvement, type_sol
+ * Colonnes propres à la porcherie :
+ *   systeme_evacuation, nombre_cases
  */
 @Entity
 @DiscriminatorValue("PORCHERIE")
 public class Porcherie extends Structure {
 
-    /** Nombre maximum de porcs pouvant être logés. */
+    // Partagé avec Batiment, Enclos, Poulailler
     private Integer capaciteMaxAnimaux;
 
-    /** Type de sol : CAILLEBOTIS, BETON, LITIERE. */
-    @Column(name = "type_sol", length = 50)
-    private String typeSol;
-
-    /** Durée du vide sanitaire recommandée en jours. */
+    // Partagé avec Batiment, Poulailler
     private Integer dureeVideSanitaireJours;
 
-    /** Système d'abreuvement : MANUEL, AUTOMATIQUE, PIPETTE. */
+    // Partagé avec Batiment, Poulailler — @Column(length=50) cohérent
     @Column(length = 50)
     private String systemeAbreuvement;
 
-    /** Système d'évacuation des déjections : LISIER, FUMIER, BIOGAZ. */
-    @Column(name = "systeme_evacuation", length = 50)
+    // Propre à la Porcherie : LISIER | FUMIER | BIOGAZ
+    // Hibernate mappe systemeEvacuation → systeme_evacuation automatiquement
+    @Column(length = 50)
     private String systemeEvacuation;
 
-    /** Nombre de cases (loges) dans la porcherie. */
-    @Column(name = "nombre_cases")
+    // Propre à la Porcherie
+    // Hibernate mappe nombreCases → nombre_cases automatiquement
     private Integer nombreCases;
 
-    /** Type de ventilation : NATURELLE, FORCEE. */
+    // Partagé avec Batiment, Poulailler — @Column(length=50) cohérent
     @Column(length = 50)
     private String typeVentilation;
 
@@ -42,9 +45,6 @@ public class Porcherie extends Structure {
 
     public Integer getCapaciteMaxAnimaux() { return capaciteMaxAnimaux; }
     public void setCapaciteMaxAnimaux(Integer v) { capaciteMaxAnimaux = v; }
-
-    public String getTypeSol() { return typeSol; }
-    public void setTypeSol(String v) { typeSol = v; }
 
     public Integer getDureeVideSanitaireJours() { return dureeVideSanitaireJours; }
     public void setDureeVideSanitaireJours(Integer v) { dureeVideSanitaireJours = v; }

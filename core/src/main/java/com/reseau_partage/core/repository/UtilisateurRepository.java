@@ -1,10 +1,11 @@
 package com.reseau_partage.core.repository;
 
-import com.reseau_partage.core.entities.Utilisateur;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import com.reseau_partage.core.entities.Utilisateur;
 
 @Repository
 public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> {
@@ -14,6 +15,4 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
     boolean existsByEmail(String email);
 
     boolean existsByTelephone(String telephone);
-
-    boolean existsByStructureNomIgnoreCase(String structureNom);
 }

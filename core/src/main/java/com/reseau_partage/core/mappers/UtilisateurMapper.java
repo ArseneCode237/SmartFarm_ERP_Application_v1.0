@@ -8,42 +8,34 @@ public class UtilisateurMapper {
     public static UtilisateurPojo toPojo(Utilisateur entity) {
         if (entity == null) return null;
         return new UtilisateurPojo(
-            entity.getId(),
-            entity.getNom(),
-            entity.getPrenom(),
-            entity.getEmail(),
-            entity.getTelephone(),
-            entity.getProfil_id(),
-            entity.getStructureId(),
-            entity.getStructureNom(),
-            entity.getTypeActivite(),
-            entity.getTypeService(),
-            entity.getLocalisation(),
-            entity.getSexe(),
-            entity.getActif(),
-            entity.getDateCreation(),
-            entity.getDateModification()
+                entity.getId(),
+                entity.getNom(),
+                entity.getPrenom(),
+                entity.getEmail(),
+                entity.getTelephone(),
+                entity.getProfil_id(),
+                entity.getAdresse(),
+                entity.getSexe(),
+                entity.getActif(),
+                entity.getDateCreation(),
+                entity.getDateModification()
         );
     }
 
     public static Utilisateur toEntity(UtilisateurPojo pojo) {
         if (pojo == null) return null;
-        Utilisateur utilisateur = new Utilisateur();
-        utilisateur.setId(pojo.getId());
-        utilisateur.setNom(pojo.getNom());
-        utilisateur.setPrenom(pojo.getPrenom());
-        utilisateur.setEmail(pojo.getEmail());
-        utilisateur.setTelephone(pojo.getTelephone());
-        utilisateur.setProfil_id(pojo.getProfil_id());
-        utilisateur.setStructureId(pojo.getFermeId());
-        utilisateur.setStructureNom(pojo.getFermeNom());
-        utilisateur.setTypeActivite(pojo.getTypeActivite());
-        utilisateur.setTypeService(pojo.getTypeService());
-        utilisateur.setLocalisation(pojo.getLocalisation());
-        utilisateur.setSexe(pojo.getSexe());
-        utilisateur.setActif(pojo.getActif());
-        utilisateur.setDateCreation(pojo.getDateCreation());
-        utilisateur.setDateModification(pojo.getDateModification());
-        return utilisateur;
+        Utilisateur u = new Utilisateur();
+        u.setId(pojo.getId());
+        u.setNom(pojo.getNom());
+        u.setPrenom(pojo.getPrenom());
+        u.setEmail(pojo.getEmail());
+        u.setTelephone(pojo.getTelephone());
+        u.setProfil_id(pojo.getProfil_id());
+        u.setAdresse(pojo.getAdresse());
+        u.setSexe(pojo.getSexe());
+        u.setActif(pojo.getActif());
+        u.setDateCreation(pojo.getDateCreation());
+        u.setDateModification(pojo.getDateModification());
+        return u;
     }
 }
