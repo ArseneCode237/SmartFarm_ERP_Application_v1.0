@@ -18,6 +18,8 @@ public abstract class Structure {
     @Column(nullable = false)
     private String nom;
     private String description;
+    @Column(name = "type_sol", length = 50)
+    private String typeSol;
     @Column(name = "superficie_m2", precision = 10, scale = 2)
     private BigDecimal superficieM2;
     @Column(precision = 10, scale = 7)
@@ -66,6 +68,14 @@ public abstract class Structure {
 
     public void setDescription(String v) {
         description = v;
+    }
+
+    public String getTypeSol() {
+        return typeSol;
+    }
+
+    public void setTypeSol(String v) {
+        typeSol = v;
     }
 
     public BigDecimal getSuperficieM2() {

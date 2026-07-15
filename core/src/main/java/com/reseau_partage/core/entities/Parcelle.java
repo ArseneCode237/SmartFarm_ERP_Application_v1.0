@@ -5,22 +5,12 @@ import jakarta.persistence.*;
 @Entity
 @DiscriminatorValue("PARCELLE")
 public class Parcelle extends Structure {
-    @Column(length = 50)
-    private String typeSol;
     @Column(length = 100)
     private String cultureActuelle;
     @Column(length = 50)
     private String systemeIrrigation;
     @Column(columnDefinition = "TEXT")
     private String coordonneesPolygone;
-
-    public String getTypeSol() {
-        return typeSol;
-    }
-
-    public void setTypeSol(String v) {
-        typeSol = v;
-    }
 
     public String getCultureActuelle() {
         return cultureActuelle;

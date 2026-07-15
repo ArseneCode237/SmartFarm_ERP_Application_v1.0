@@ -1,38 +1,48 @@
 package com.reseau_partage.core.entities;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 
 /**
  * Sous-type de Structure pour les poulaillers (aviculture).
  * Discriminator value : "POULAILLER"
+ *
+ * Colonnes partagées avec d'autres sous-types (SINGLE_TABLE) :
+ *   capacite_max_animaux, type_ventilation, duree_vide_sanitaire_jours,
+ *   nombre_rangees, systeme_abreuvement
+ * Colonnes propres au poulailler :
+ *   type_production, systeme_chauffage
  */
 @Entity
 @DiscriminatorValue("POULAILLER")
 public class Poulailler extends Structure {
 
-    /** Nombre maximum de volailles pouvant être logées. */
+    // Partagé avec Batiment, Enclos, Porcherie
     private Integer capaciteMaxAnimaux;
 
-    /** Type de ventilation : NATURELLE, FORCEE, TUNNEL. */
+    // Partagé avec Batiment, Porcherie — @Column(length=50) cohérent
     @Column(length = 50)
     private String typeVentilation;
 
-    /** Durée du vide sanitaire recommandée en jours. */
+    // Partagé avec Batiment, Porcherie
     private Integer dureeVideSanitaireJours;
 
-    /** Nombre de rangées de perchoirs ou de cages. */
+    // Partagé avec Batiment
     private Integer nombreRangees;
 
-    /** Système d'abreuvement : MANUEL, NIPPONS, AUTOMATIQUE. */
+    // Partagé avec Batiment, Porcherie — @Column(length=50) cohérent
     @Column(length = 50)
     private String systemeAbreuvement;
 
-    /** Type de production : PONTE, CHAIR, MIXTE. */
-    @Column(name = "type_production", length = 50)
+    // Propre au Poulailler : PONTE | CHAIR | MIXTE
+    // Hibernate mappe typeProduction → type_production automatiquement
+    @Column(length = 50)
     private String typeProduction;
 
-    /** Système de chauffage utilisé en saison froide. */
-    @Column(name = "systeme_chauffage", length = 50)
+    // Propre au Poulailler
+    // Hibernate mappe systemeChauffage → systeme_chauffage automatiquement
+    @Column(length = 50)
     private String systemeChauffage;
 
     // ── Getters / Setters ────────────────────────────────────────────────────
