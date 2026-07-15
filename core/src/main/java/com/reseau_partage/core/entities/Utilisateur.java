@@ -76,10 +76,10 @@ public class Utilisateur implements Serializable {
     }
 
     public Utilisateur(Long id, String nom, String prenom, String email, String telephone,
-                       String motDePasse, Long profil_id, String structureId, String structureNom,
-                       List<String> typeActivite, List<String> typeService, String localisation,
-                       Boolean actif, int tentative_echec,
-                       Date dateCreation, Date bloque_jusqu_a, Date dateModification) {
+            String motDePasse, Long profil_id, String structureId, String structureNom,
+            List<String> typeActivite, List<String> typeService, String localisation,
+            Boolean actif, int tentative_echec,
+            Date dateCreation, Date bloque_jusqu_a, Date dateModification) {
         this.id = id;
         this.nom = nom;
         this.prenom = prenom;
@@ -99,59 +99,149 @@ public class Utilisateur implements Serializable {
         this.dateModification = dateModification;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getNom() { return nom; }
-    public void setNom(String nom) { this.nom = nom; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getPrenom() { return prenom; }
-    public void setPrenom(String prenom) { this.prenom = prenom; }
+    public String getNom() {
+        return nom;
+    }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public void setNom(String nom) {
+        this.nom = nom;
+    }
 
-    public String getTelephone() { return telephone; }
-    public void setTelephone(String telephone) { this.telephone = telephone; }
+    public String getPrenom() {
+        return prenom;
+    }
 
-    public List<String> getTypeActivite() { return typeActivite; }
-    public void setTypeActivite(List<String> typeActivite) { this.typeActivite = typeActivite == null ? new ArrayList<>() : new ArrayList<>(typeActivite); }
+    public void setPrenom(String prenom) {
+        this.prenom = prenom;
+    }
 
-    public List<String> getTypeService() { return typeService; }
-    public void setTypeService(List<String> typeService) { this.typeService = typeService == null ? new ArrayList<>() : new ArrayList<>(typeService); }
+    public String getEmail() {
+        return email;
+    }
 
-    public String getLocalisation() { return localisation; }
-    public void setLocalisation(String localisation) { this.localisation = localisation; }
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
-    public String getSexe() { return sexe; }
-    public void setSexe(String sexe) { this.sexe = sexe; }
+    public String getTelephone() {
+        return telephone;
+    }
 
-    public String getMotDePasse() { return motDePasse; }
-    public void setMotDePasse(String motDePasse) { this.motDePasse = motDePasse; }
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
+    }
 
-    public Long getProfil_id() { return profil_id; }
-    public void setProfil_id(Long profil_id) { this.profil_id = profil_id; }
+    public List<String> getTypeActivite() {
+        return typeActivite;
+    }
 
-    public String getStructureId() { return structureId; }
-    public void setStructureId(String structureId) { this.structureId = structureId; }
+    public void setTypeActivite(List<String> typeActivite) {
+        this.typeActivite = typeActivite == null ? new ArrayList<>() : new ArrayList<>(typeActivite);
+    }
 
-    public String getStructureNom() { return structureNom; }
-    public void setStructureNom(String structureNom) { this.structureNom = structureNom; }
+    public List<String> getTypeService() {
+        return typeService;
+    }
 
-    public Boolean getActif() { return actif; }
-    public void setActif(Boolean actif) { this.actif = actif; }
+    public void setTypeService(List<String> typeService) {
+        this.typeService = typeService == null ? new ArrayList<>() : new ArrayList<>(typeService);
+    }
 
-    public int getTentative_echec() { return tentative_echec; }
-    public void setTentative_echec(int tentative_echec) { this.tentative_echec = tentative_echec; }
+    public String getLocalisation() {
+        return localisation;
+    }
 
-    public Date getDateCreation() { return dateCreation; }
-    public void setDateCreation(Date dateCreation) { this.dateCreation = dateCreation; }
+    public void setLocalisation(String localisation) {
+        this.localisation = localisation;
+    }
 
-    public Date getBloque_jusqu_a() { return bloque_jusqu_a; }
-    public void setBloque_jusqu_a(Date bloque_jusqu_a) { this.bloque_jusqu_a = bloque_jusqu_a; }
+    public String getSexe() {
+        return sexe;
+    }
 
-    public Date getDateModification() { return dateModification; }
-    public void setDateModification(Date dateModification) { this.dateModification = dateModification; }
+    public void setSexe(String sexe) {
+        this.sexe = sexe;
+    }
+
+    public String getMotDePasse() {
+        return motDePasse;
+    }
+
+    public void setMotDePasse(String motDePasse) {
+        this.motDePasse = motDePasse;
+    }
+
+    public Long getProfil_id() {
+        return profil_id;
+    }
+
+    public void setProfil_id(Long profil_id) {
+        this.profil_id = profil_id;
+    }
+
+    public String getStructureId() {
+        return structureId;
+    }
+
+    public void setStructureId(String structureId) {
+        this.structureId = structureId;
+    }
+
+    public String getStructureNom() {
+        return structureNom;
+    }
+
+    public void setStructureNom(String structureNom) {
+        this.structureNom = structureNom;
+    }
+
+    public Boolean getActif() {
+        return actif;
+    }
+
+    public void setActif(Boolean actif) {
+        this.actif = actif;
+    }
+
+    public int getTentative_echec() {
+        return tentative_echec;
+    }
+
+    public void setTentative_echec(int tentative_echec) {
+        this.tentative_echec = tentative_echec;
+    }
+
+    public Date getDateCreation() {
+        return dateCreation;
+    }
+
+    public void setDateCreation(Date dateCreation) {
+        this.dateCreation = dateCreation;
+    }
+
+    public Date getBloque_jusqu_a() {
+        return bloque_jusqu_a;
+    }
+
+    public void setBloque_jusqu_a(Date bloque_jusqu_a) {
+        this.bloque_jusqu_a = bloque_jusqu_a;
+    }
+
+    public Date getDateModification() {
+        return dateModification;
+    }
+
+    public void setDateModification(Date dateModification) {
+        this.dateModification = dateModification;
+    }
 
     @Override
     public String toString() {
