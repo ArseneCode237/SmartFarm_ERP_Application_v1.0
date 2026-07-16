@@ -38,6 +38,7 @@ public class Ferme {
     private String emailContact;
 
     /** Localisation géographique de la ferme (ville, région, etc.). */
+    @Column(length = 500)
     private String localisation;
 
     /**

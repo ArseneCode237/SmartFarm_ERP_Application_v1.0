@@ -415,6 +415,7 @@ public class OrganisationService {
 
   private Map<String, Object> structure(Structure s) {
     Map<String, Object> m = new LinkedHashMap<>();
+    // ── Champs communs ────────────────────────────────────────────────────────
     m.put("id", s.getId());
     m.put("siteId", s.getSite().getId());
     m.put("siteNom", s.getSite().getNom());
@@ -427,6 +428,51 @@ public class OrganisationService {
     m.put("statut", s.getStatut());
     m.put("dateCreation", s.getDateCreation());
     m.put("dateDebutVide", s.getDateDebutVide());
+    // ── Attributs spécifiques selon le type ──────────────────────────────────
+    if (s instanceof Batiment x) {
+      m.put("capaciteMaxAnimaux", x.getCapaciteMaxAnimaux());
+      m.put("typeVentilation", x.getTypeVentilation());
+      m.put("dureeVideSanitaireJours", x.getDureeVideSanitaireJours());
+      m.put("nombreRangees", x.getNombreRangees());
+      m.put("systemeAbreuvement", x.getSystemeAbreuvement());
+    } else if (s instanceof Enclos x) {
+      m.put("capaciteMaxAnimaux", x.getCapaciteMaxAnimaux());
+      m.put("typeCloture", x.getTypeCloture());
+      m.put("accesEau", x.getAccesEau());
+      m.put("especesCompatibles", x.getEspecesCompatibles());
+    } else if (s instanceof Etang x) {
+      m.put("volumeM3", x.getVolumeM3());
+      m.put("profondeurM", x.getProfondeurM());
+      m.put("systemeAeration", x.getSystemeAeration());
+      m.put("temperatureCibleCelsius", x.getTemperatureCibleCelsius());
+      m.put("phCible", x.getPhCible());
+    } else if (s instanceof Entrepot x) {
+      m.put("capaciteTonnes", x.getCapaciteTonnes());
+      m.put("temperatureControlee", x.getTemperatureControlee());
+      m.put("temperatureMinCelsius", x.getTemperatureMinCelsius());
+      m.put("temperatureMaxCelsius", x.getTemperatureMaxCelsius());
+    } else if (s instanceof Poulailler x) {
+      m.put("capaciteMaxAnimaux", x.getCapaciteMaxAnimaux());
+      m.put("typeVentilation", x.getTypeVentilation());
+      m.put("dureeVideSanitaireJours", x.getDureeVideSanitaireJours());
+      m.put("nombreRangees", x.getNombreRangees());
+      m.put("systemeAbreuvement", x.getSystemeAbreuvement());
+      m.put("typeProduction", x.getTypeProduction());
+      m.put("systemeChauffage", x.getSystemeChauffage());
+    } else if (s instanceof Porcherie x) {
+      m.put("capaciteMaxAnimaux", x.getCapaciteMaxAnimaux());
+      m.put("typeSol", x.getTypeSol());
+      m.put("dureeVideSanitaireJours", x.getDureeVideSanitaireJours());
+      m.put("systemeAbreuvement", x.getSystemeAbreuvement());
+      m.put("systemeEvacuation", x.getSystemeEvacuation());
+      m.put("nombreCases", x.getNombreCases());
+      m.put("typeVentilation", x.getTypeVentilation());
+    } else if (s instanceof Parcelle x) {
+      m.put("typeSol", x.getTypeSol());
+      m.put("cultureActuelle", x.getCultureActuelle());
+      m.put("systemeIrrigation", x.getSystemeIrrigation());
+      m.put("coordonneesPolygone", x.getCoordonneesPolygone());
+    }
     return m;
   }
 }
