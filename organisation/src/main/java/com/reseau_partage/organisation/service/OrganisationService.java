@@ -1,10 +1,13 @@
 package com.reseau_partage.organisation.service;
 
+import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ import com.reseau_partage.core.entities.Structure;
 import com.reseau_partage.core.repository.FermeRepository;
 import com.reseau_partage.core.repository.SiteRepository;
 import com.reseau_partage.core.repository.StructureRepository;
+import com.reseau_partage.core.repository.UtilisateurRepository;
 import com.reseau_partage.organisation.dto.FermeRequest;
 import com.reseau_partage.organisation.dto.SiteRequest;
 import com.reseau_partage.organisation.dto.StructureRequest;
@@ -33,35 +37,47 @@ import com.reseau_partage.organisation.exception.ConflictException;
 import com.reseau_partage.organisation.exception.ResourceNotFoundException;
 import com.reseau_partage.organisation.exception.StatutTransitionException;
 
-import java.text.Normalizer;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 @Service
 @Transactional
 public class OrganisationService {
   private final FermeRepository fermes;
   private final SiteRepository sites;
   private final StructureRepository structures;
+  private final UtilisateurRepository utilisateurs;
 
-  public OrganisationService(FermeRepository fermes, SiteRepository sites, StructureRepository structures) {
+  public OrganisationService(FermeRepository fermes, SiteRepository sites,
+                             StructureRepository structures, UtilisateurRepository utilisateurs) {
     this.fermes = fermes;
     this.sites = sites;
     this.structures = structures;
+    this.utilisateurs = utilisateurs;
   }
 
-  public Map<String, Object> createFerme(FermeRequest r) {
+  public Map<String, Object> createFerme(FermeRequest r, String email) {
     if (fermes.existsByNomAndPays(r.nom(), r.pays()))
       throw new ConflictException("Une ferme portant ce nom existe deja dans ce pays.");
+    Long userId = utilisateurs.findByEmail(email)
+        .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", 0L))
+        .getId();
     Ferme f = new Ferme();
     apply(f, r);
     f.setStatut(StatutFerme.ACTIF);
+    f.setProprietaireId(userId);
     return ferme(fermes.save(f));
   }
 
   @Transactional(readOnly = true)
   public List<Map<String, Object>> listFermes() {
     return fermes.findByStatutNot(StatutFerme.ARCHIVEE).stream().map(this::ferme).toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<Map<String, Object>> listMesFermes(String email) {
+    Long userId = utilisateurs.findByEmail(email)
+        .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", 0L))
+        .getId();
+    return fermes.findByProprietaireIdAndStatutNot(userId, StatutFerme.ARCHIVEE)
+        .stream().map(this::ferme).toList();
   }
 
   @Transactional(readOnly = true)
@@ -376,6 +392,7 @@ public class OrganisationService {
   private Map<String, Object> ferme(Ferme f) {
     Map<String, Object> m = new LinkedHashMap<>();
     m.put("id", f.getId());
+    m.put("proprietaireId", f.getProprietaireId());
     m.put("nom", f.getNom());
     m.put("pays", f.getPays());
     m.put("devise", f.getDevise());
