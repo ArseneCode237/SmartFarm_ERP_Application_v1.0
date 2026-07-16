@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,19 +35,31 @@ public class FermeController {
     /**
      * POST /api/organisation/fermes
      * Créer une nouvelle ferme.
+     * L'utilisateur connecté devient automatiquement le propriétaire.
      */
     @PostMapping
-    public ResponseEntity<Map<String, Object>> create(@Valid @RequestBody FermeRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.createFerme(request));
+    public ResponseEntity<Map<String, Object>> create(@Valid @RequestBody FermeRequest request,
+                                                      Authentication authentication) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.createFerme(request, authentication.getName()));
     }
 
     /**
      * GET /api/organisation/fermes
-     * Lister toutes les fermes actives.
+     * Lister toutes les fermes du système (non archivées).
      */
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> list() {
         return ResponseEntity.ok(service.listFermes());
+    }
+
+    /**
+     * GET /api/organisation/fermes/mes-fermes
+     * Lister uniquement les fermes appartenant à l'utilisateur connecté.
+     */
+    @GetMapping("/mes-fermes")
+    public ResponseEntity<List<Map<String, Object>>> mesFermes(Authentication authentication) {
+        return ResponseEntity.ok(service.listMesFermes(authentication.getName()));
     }
 
     /**
@@ -70,7 +83,7 @@ public class FermeController {
 
     /**
      * PATCH /api/organisation/fermes/{id}/archiver
-     * Archiver une ferme (ADMIN uniquement — sécurisé dans SecurityConfig).
+     * Archiver une ferme (ADMIN uniquement).
      * Cascade : tous ses sites et structures passent en ARCHIVE.
      */
     @PatchMapping("/{id}/archiver")
@@ -81,8 +94,7 @@ public class FermeController {
 
     /**
      * PATCH /api/organisation/fermes/{id}/statut
-     * Changer le statut opérationnel d'une ferme : ACTIF, INACTIF, MAINTENANCE.
-     * L'archivage définitif passe par /archiver (ADMIN uniquement).
+     * Changer le statut opérationnel : ACTIF, INACTIF, MAINTENANCE.
      *
      * Corps attendu : { "statut": "MAINTENANCE" }
      */

@@ -1,10 +1,24 @@
 package com.reseau_partage.core.entities;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderColumn;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "fermes", uniqueConstraints = @UniqueConstraint(columnNames = { "nom", "pays" }))
@@ -69,6 +83,10 @@ public class Ferme {
 
     @Column(name = "date_creation", nullable = false, updatable = false)
     private LocalDateTime dateCreation;
+
+    /** ID de l'utilisateur propriétaire de la ferme. */
+    @Column(name = "proprietaire_id", nullable = false, updatable = false)
+    private Long proprietaireId;
 
     @PrePersist
     void prePersist() {
@@ -148,6 +166,9 @@ public class Ferme {
     public void setStatut(StatutFerme v) { statut = v; }
 
     public LocalDateTime getDateCreation() { return dateCreation; }
+
+    public Long getProprietaireId() { return proprietaireId; }
+    public void setProprietaireId(Long v) { proprietaireId = v; }
 
     public String getLocalisation() { return localisation; }
     public void setLocalisation(String v) { localisation = v; }
