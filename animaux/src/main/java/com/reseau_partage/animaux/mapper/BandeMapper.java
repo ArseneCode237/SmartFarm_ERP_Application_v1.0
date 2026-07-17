@@ -8,6 +8,9 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import com.reseau_partage.animaux.dto.bande.BandeResponse;
 import com.reseau_partage.core.entities.Bande;
 
+import com.reseau_partage.core.entities.StatutBande;
+import org.mapstruct.BeforeMapping;
+
 @Mapper(componentModel = "spring")
 public interface BandeMapper {
 
@@ -33,9 +36,15 @@ public interface BandeMapper {
     @Mapping(target = "fcrCumule", ignore = true)
     @Mapping(target = "tauxPontePct", ignore = true)
     @Mapping(target = "gainMoyenQuotidienG", ignore = true)
-    @Mapping(target = "statut", ignore = true)
     @Mapping(target = "dateCreation", ignore = true)
     @Mapping(target = "dateModification", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     Bande toEntity(com.reseau_partage.animaux.dto.bande.BandeRequest request);
+
+    @BeforeMapping
+    default void setDefaultStatut(com.reseau_partage.animaux.dto.bande.BandeRequest request, @org.mapstruct.MappingTarget Bande bande) {
+        if (bande.getStatut() == null && (request == null || request.statut() == null)) {
+            bande.setStatut(StatutBande.EN_COURS);
+        }
+    }
 }

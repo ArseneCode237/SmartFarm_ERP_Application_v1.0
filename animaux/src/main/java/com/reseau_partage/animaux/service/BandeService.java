@@ -76,8 +76,20 @@ public class BandeService {
             bande.setSite(site);
         }
         
+        // Initialiser les champs supplémentaires
+        bande.setCategorie(request.categorie());
+        bande.setDescription(request.description());
+        bande.setProvenance(request.provenance());
+        bande.setFournisseurNom(request.fournisseurNom());
+        bande.setCoutAchatUnitaire(request.coutAchatUnitaire());
+        bande.setRationJournaliereKg(request.rationJournaliereKg());
+        // Initialiser les effectifs (effectifActuel est déjà initialisé par le mapper à effectifInitial)
+        bande.setEffectifMorts(0);
+        bande.setEffectifVendus(0);
+        bande.setEffectifReformes(0);
+        
         bande.setCodeBande(genererCodeBande(request));
-        bande.setStatut(StatutBande.EN_COURS);
+        bande.setStatut(request.statut() != null ? request.statut() : StatutBande.EN_COURS);
         bandeRepository.save(bande);
         enregistrerMouvementEntree(bande, request.effectifInitial());
         return toResponse(bande);
@@ -107,11 +119,29 @@ public class BandeService {
         bande.setNotes(request.notes());
         bande.setDateEntree(request.dateEntree());
         bande.setDateSortiePrevue(request.dateSortiePrevue());
+        bande.setDateSortieReelle(request.dateSortieReelle());
+        bande.setEffectifInitial(request.effectifInitial());
+        // Mettre à jour effectifActuel seulement si fourni, sinon ne pas écraser
+        if (request.effectifActuel() != null) {
+            bande.setEffectifActuel(request.effectifActuel());
+        }
+        bande.setEffectifMorts(request.effectifMorts());
+        bande.setEffectifVendus(request.effectifVendus());
+        bande.setEffectifReformes(request.effectifReformes());
         bande.setPoidsMoyenEntreeKg(request.poidsMoyenEntreeKg());
+        bande.setPoidsMoyenActuelKg(request.poidsMoyenActuelKg());
+        bande.setPoidsTotalSortie(request.poidsTotalSortie());
         bande.setRationJournaliereKg(request.rationJournaliereKg());
+        bande.setFcrCumule(request.fcrCumule());
+        bande.setTauxPontePct(request.tauxPontePct());
+        bande.setGainMoyenQuotidienG(request.gainMoyenQuotidienG());
         bande.setProvenance(request.provenance());
         bande.setFournisseurNom(request.fournisseurNom());
         bande.setCoutAchatUnitaire(request.coutAchatUnitaire());
+        // Mettre à jour le statut seulement si fourni
+        if (request.statut() != null) {
+            bande.setStatut(request.statut());
+        }
         
         if (request.siteId() != null && !Objects.equals(request.siteId(), bande.getSite() != null ? bande.getSite().getId() : null)) {
             var site = siteRepository.findById(request.siteId())

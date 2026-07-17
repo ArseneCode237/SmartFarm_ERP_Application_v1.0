@@ -3,6 +3,7 @@ package com.reseau_partage.animaux.dto.bande;
 import com.reseau_partage.core.entities.Categorie;
 import com.reseau_partage.core.entities.Espece;
 import com.reseau_partage.core.entities.Provenance;
+import com.reseau_partage.core.entities.StatutBande;
 import com.reseau_partage.core.entities.TypeProduction;
 import jakarta.validation.constraints.NotNull;
 
@@ -22,11 +23,22 @@ public record BandeRequest(
         String fournisseurNom,
         BigDecimal coutAchatUnitaire,
         @NotNull Integer effectifInitial,
+        Integer effectifActuel,
+        Integer effectifMorts,
+        Integer effectifVendus,
+        Integer effectifReformes,
         LocalDate dateEntree,
         LocalDate dateSortiePrevue,
+        LocalDate dateSortieReelle,
         BigDecimal poidsMoyenEntreeKg,
+        BigDecimal poidsMoyenActuelKg,
+        BigDecimal poidsTotalSortie,
         BigDecimal rationJournaliereKg,
+        BigDecimal fcrCumule,
+        BigDecimal tauxPontePct,
+        BigDecimal gainMoyenQuotidienG,
         String description,
+        StatutBande statut,
         String notes
 ) {
 }
