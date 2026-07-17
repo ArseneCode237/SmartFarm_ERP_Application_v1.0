@@ -1,0 +1,5 @@
+package com.reseau_partage.core.entities;
+
+public enum TypeProduction {
+    CHAIR, ENGRAISSEMENT, REPRODUCTION, NAISSAGE, NAISSAGE_ENGRAISSEMENT, PONTE, LAIT, VIANDE, AQUACULTURE, MIXTE
+}
