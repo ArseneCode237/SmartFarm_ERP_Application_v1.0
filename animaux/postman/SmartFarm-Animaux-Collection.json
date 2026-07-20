@@ -109,6 +109,25 @@
           }
         },
         {
+          "name": "Mettre à jour un porcin",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Truie Test MAJ\",\n  \"codeBoucle\": \"PORC-001-MAJ\",\n  \"codeRfid\": \"RFID-001-MAJ\",\n  \"race\": \"Landrace\",\n  \"dateNaissance\": \"2024-01-20\",\n  \"dateEntree\": \"2024-02-05\",\n  \"poidsEntreeKg\": 30.0,\n  \"poidsActuelKg\": 85.0,\n  \"provenance\": \"ACHAT\",\n  \"fournisseurNom\": \"Fermes du Sud\",\n  \"notes\": \"Mise à jour de validation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/animaux/porcs/{{porcinId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "animaux", "porcs", "{{porcinId}}"]
+            }
+          }
+        },
+        {
           "name": "Transférer un porcin",
           "request": {
             "method": "POST",
