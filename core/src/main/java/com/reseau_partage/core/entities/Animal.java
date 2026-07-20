@@ -16,6 +16,9 @@ public class Animal {
     @Column(name = "code_unique", nullable = false, unique = true, length = 30)
     private String codeUnique;
 
+    @Column(name = "nom", length = 100)
+    private String nom;
+
     @Column(name = "code_rfid", length = 50)
     private String codeRfid;
 
@@ -120,6 +123,8 @@ public class Animal {
     public void setId(Long id) { this.id = id; }
     public String getCodeUnique() { return codeUnique; }
     public void setCodeUnique(String codeUnique) { this.codeUnique = codeUnique; }
+    public String getNom() { return nom; }
+    public void setNom(String nom) { this.nom = nom; }
     public String getCodeRfid() { return codeRfid; }
     public void setCodeRfid(String codeRfid) { this.codeRfid = codeRfid; }
     public String getCodeBoucle() { return codeBoucle; }
