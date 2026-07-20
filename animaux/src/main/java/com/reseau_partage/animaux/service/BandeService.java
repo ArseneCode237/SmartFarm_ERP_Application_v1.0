@@ -97,7 +97,7 @@ public class BandeService {
 
     @Transactional(readOnly = true)
     public Page<BandeResponse> list(Long structureId, Long siteId, Long fermeId, Espece espece, StatutBande statut, Pageable pageable) {
-        return bandeRepository.findAll(pageable).map(this::toResponse);
+        return bandeRepository.findFiltre(fermeId, siteId, structureId, espece, statut, pageable).map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
