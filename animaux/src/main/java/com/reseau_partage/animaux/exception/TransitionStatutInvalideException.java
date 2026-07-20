@@ -4,6 +4,6 @@ import com.reseau_partage.core.entities.StatutAnimal;
 
 public class TransitionStatutInvalideException extends RuntimeException {
     public TransitionStatutInvalideException(StatutAnimal actuel) {
-        super("Impossible de modifier un animal avec le statut : " + actuel);
+        super("Impossible de modifier un animal avec le statut actuel : " + actuel + ". Seuls les animaux ACTIFS peuvent être modifiés (sauf réforme explicite).");
     }
 }

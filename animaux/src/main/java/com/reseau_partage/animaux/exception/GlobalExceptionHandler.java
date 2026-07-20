@@ -82,4 +82,48 @@ public class GlobalExceptionHandler {
                 "path", ""
         );
     }
+
+    @ExceptionHandler(ConfigEspeceIntrouvableException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, Object> notFound(ConfigEspeceIntrouvableException ex) {
+        return Map.of(
+                "timestamp", LocalDateTime.now(),
+                "status", 404,
+                "error", "Not Found",
+                "message", ex.getMessage(),
+                "path", ""
+        );
+    }
+
+    @ExceptionHandler(StatutReproducteurInvalideException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, Object> badRequest(StatutReproducteurInvalideException ex) {
+        return Map.of(
+                "timestamp", LocalDateTime.now(),
+                "status", 400,
+                "error", "Bad Request",
+                "message", ex.getMessage(),
+                "path", ""
+        );
+    }
+
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, Object> badRequest(org.springframework.http.converter.HttpMessageNotReadableException ex) {
+        String message = "Requête invalide : ";
+        if (ex.getMessage() != null && ex.getMessage().contains("Enum")) {
+            message += "valeur d'enum incorrecte. Vérifiez les valeurs acceptées (ex: Provenance={NAISSANCE_INTERNE, ACHAT_EXTERNE, DON, INTERNE, EXTERNE}, Sexe={MALE, FEMELLE, INCONNU}, Espece={POULET, BOVIN, PORC...}).";
+        } else if (ex.getMessage() != null && ex.getMessage().contains("JSON parse error")) {
+            message += "format JSON invalide. Vérifiez la syntaxe du body.";
+        } else {
+            message += ex.getMessage();
+        }
+        return Map.of(
+                "timestamp", LocalDateTime.now(),
+                "status", 400,
+                "error", "Bad Request",
+                "message", message,
+                "path", ""
+        );
+    }
 }

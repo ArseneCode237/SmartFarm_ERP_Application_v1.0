@@ -183,7 +183,7 @@ public class PeseeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Bande", bandeId));
         ConfigEspece config = configEspeceRepository.findByEspece(bande.getEspece()).orElse(null);
         if (config == null || config.getAgeCibleAbattageJours() == null || config.getPoidsAbattageCibleKg() == null) {
-            throw new IllegalArgumentException("Configuration insuffisante pour la prevision (age/poids cible).");
+            throw new IllegalArgumentException("Configuration espèce manquante pour " + bande.getEspece() + " : ageCibleAbattageJours et poidsAbattageCibleKg requis dans ConfigEspece.");
         }
         List<Pesee> pesees = peseeRepository.findByBandeIdOrderByDatePeseeAsc(bandeId);
         if (pesees.size() < 2) {

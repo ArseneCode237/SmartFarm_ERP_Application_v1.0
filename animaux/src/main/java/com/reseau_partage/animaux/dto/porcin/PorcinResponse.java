@@ -1,14 +1,14 @@
 package com.reseau_partage.animaux.dto.porcin;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import com.reseau_partage.animaux.dto.saillie.SaillieResponse;
 import com.reseau_partage.core.entities.Provenance;
 import com.reseau_partage.core.entities.Sexe;
 import com.reseau_partage.core.entities.StatutAnimal;
 import com.reseau_partage.core.entities.StatutReproductifPorcin;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 public record PorcinResponse(
         // ── Animal de base ────────────────────────────────────────────────────
@@ -30,6 +30,7 @@ public record PorcinResponse(
         String siteNom,
         Provenance provenance,
         String fournisseurNom,
+        BigDecimal prixUnitaire,
 
         // ── Profil reproductif ────────────────────────────────────────────────
         StatutReproductifPorcin statutReproductif,

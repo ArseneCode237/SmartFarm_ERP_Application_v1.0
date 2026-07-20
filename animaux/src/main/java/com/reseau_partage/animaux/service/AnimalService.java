@@ -168,7 +168,7 @@ public class AnimalService {
             case SORTIE_MORT -> StatutAnimal.MORT;
             case SORTIE_VENTE -> StatutAnimal.VENDU;
             case SORTIE_REFORME -> StatutAnimal.REFORME;
-            default -> throw new IllegalArgumentException("Type de mouvement invalide pour une sortie.");
+            default -> throw new IllegalArgumentException("Type de mouvement invalide pour une sortie. Valeurs acceptées : SORTIE_VENTE, SORTIE_MORT, SORTIE_REFORME.");
         });
         animal.setDateSortie(dateSortie);
         animal.setMotifSortie(motif);

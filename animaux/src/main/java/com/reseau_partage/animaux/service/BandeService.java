@@ -190,7 +190,7 @@ public class BandeService {
                 if (bande.getEffectifActuel() == 0) bande.setStatut(StatutBande.TERMINEE);
                 bande.setEffectifReformes((bande.getEffectifReformes() == null ? 0 : bande.getEffectifReformes()) + quantite);
             }
-            default -> throw new IllegalArgumentException("Type de mouvement invalide pour une sortie collective.");
+            default -> throw new IllegalArgumentException("Type de mouvement invalide pour une sortie collective. Valeurs acceptées : SORTIE_VENTE, SORTIE_MORT, SORTIE_REFORME.");
         }
         if (bande.getEffectifActuel() == 0) {
             bande.setDateSortieReelle(dateSortie);

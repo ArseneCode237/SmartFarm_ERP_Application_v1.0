@@ -60,7 +60,8 @@ public class SaillieService {
                 && statut != StatutReproductifPorcin.EN_CHALEUR
                 && statut != StatutReproductifPorcin.COCHETTE) {
             throw new IllegalArgumentException(
-                    "La truie ne peut pas être saillée dans le statut : " + statut);
+                    "La truie (id=" + request.truieId() + ", statut=" + statut + ") ne peut pas être saillie. "
+                    + "Statuts autorisés : EN_ATTENTE_SAILLIE, EN_CHALEUR, COCHETTE.");
         }
 
         // Verrat optionnel
@@ -121,7 +122,8 @@ public class SaillieService {
 
         if (saillie.getStatut() != StatutSaillie.EN_ATTENTE) {
             throw new IllegalArgumentException(
-                    "Seules les saillies EN_ATTENTE peuvent être confirmées.");
+                    "Impossible de confirmer la saillie id=" + saillieId + " : statut actuel=" + saillie.getStatut()
+                    + ". Seules les saillies EN_ATTENTE peuvent être confirmées.");
         }
 
         ProfilPorcin profil = profilPorcinRepository.findByAnimalId(saillie.getTruie().getId())
@@ -135,20 +137,19 @@ public class SaillieService {
 
         } else if (request.statut() == StatutSaillie.ECHEC) {
             if (request.motifEchec() == null || request.motifEchec().isBlank()) {
-                throw new IllegalArgumentException("Le motif d'échec est obligatoire.");
+                throw new IllegalArgumentException("Le motif d'échec est obligatoire pour une confirmation ECHEC.");
             }
             saillie.setStatut(StatutSaillie.ECHEC);
             saillie.setDateInfirmation(request.dateEcho());
             saillie.setMotifEchec(request.motifEchec());
-            // Retour en chaleur attendu dans 5 jours
             profil.setStatutReproductif(StatutReproductifPorcin.EN_CHALEUR);
             profil.setSaillieActive(null);
             profil.setDateMiseBasPrevue(null);
             profil.setDateProchainesSailliePrevue(LocalDate.now().plusDays(JOURS_RETOUR_CHALEUR_ECHEC));
         } else {
             throw new IllegalArgumentException(
-                    "Statut invalide pour confirmation : " + request.statut() +
-                    ". Attendu : CONFIRMEE ou ECHEC.");
+                    "Statut invalide pour la confirmation de la saillie id=" + saillieId + " : " + request.statut()
+                    + ". Attendu : CONFIRMEE ou ECHEC.");
         }
 
         if (request.notes() != null) saillie.setNotes(request.notes());

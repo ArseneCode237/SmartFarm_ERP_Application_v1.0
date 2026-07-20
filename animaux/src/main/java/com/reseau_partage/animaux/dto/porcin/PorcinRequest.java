@@ -31,6 +31,7 @@ public record PorcinRequest(
         @NotNull Provenance provenance,
         String fournisseurNom,
         BigDecimal coutAchat,
+        BigDecimal prixUnitaire,
 
         // ── Généalogie ────────────────────────────────────────────────────────
         Long mereId,

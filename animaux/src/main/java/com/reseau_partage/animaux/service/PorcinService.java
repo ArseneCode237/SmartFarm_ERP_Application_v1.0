@@ -112,6 +112,7 @@ public class PorcinService {
         animal.setStructure(structure);
         animal.setProvenance(request.provenance());
         animal.setFournisseurNom(request.fournisseurNom());
+        animal.setPrixUnitaire(request.prixUnitaire());
         animal.setNotes(request.notes());
         animal.setStatut(StatutAnimal.ACTIF);
         animal.setCodeUnique(genererCodeUnique());
@@ -200,6 +201,9 @@ public class PorcinService {
         if (request.codeRfid() != null) {
             animal.setCodeRfid(request.codeRfid());
         }
+        if (request.sexe() != null) {
+            animal.setSexe(request.sexe());
+        }
         if (request.race() != null) {
             animal.setRace(request.race());
         }
@@ -220,6 +224,9 @@ public class PorcinService {
         }
         if (request.fournisseurNom() != null) {
             animal.setFournisseurNom(request.fournisseurNom());
+        }
+        if (request.prixUnitaire() != null) {
+            animal.setPrixUnitaire(request.prixUnitaire());
         }
         if (request.notes() != null) {
             animal.setNotes(request.notes());
@@ -244,7 +251,8 @@ public class PorcinService {
             Set<StatutReproductifPorcin> cibles = TRANSITIONS.getOrDefault(actuel, Set.of());
             if (!cibles.contains(nouveauStatut)) {
                 throw new IllegalArgumentException(
-                        "Transition " + actuel + " → " + nouveauStatut + " non autorisée.");
+                        "Transition non autorisée pour le porc id=" + id + " : " + actuel + " → " + nouveauStatut
+                        + ". Transitions autorisées depuis " + actuel + " : " + cibles + ".");
             }
         }
 
@@ -392,6 +400,7 @@ public class PorcinService {
                         ? animal.getStructure().getSite().getNom() : null,
                 animal.getProvenance(),
                 animal.getFournisseurNom(),
+                animal.getPrixUnitaire(),
                 // Profil reproductif
                 profil != null ? profil.getStatutReproductif() : null,
                 profil != null ? profil.getDateDebutStatutActuel() : null,

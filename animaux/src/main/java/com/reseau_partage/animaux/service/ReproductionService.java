@@ -191,7 +191,7 @@ public class ReproductionService {
         try {
             nouveau = StatutReproducteur.valueOf(statut.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new StatutReproducteurInvalideException("Statut reproducteur invalide : " + statut);
+            throw new StatutReproducteurInvalideException("Statut reproducteur invalide : '" + statut + "'. Valeurs acceptées : " + java.util.Arrays.toString(StatutReproducteur.values()));
         }
         animal.setStatutReproducteur(nouveau);
         animalRepository.save(animal);
