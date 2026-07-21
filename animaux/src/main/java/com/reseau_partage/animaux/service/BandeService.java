@@ -60,19 +60,19 @@ public class BandeService {
     @Transactional
     public BandeResponse create(BandeRequest request) {
         Structure structure = structureRepository.findById(request.structureId())
-                .orElseThrow(() -> new ResourceNotFoundException("Structure", request.structureId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Structure non trouvée avec l'ID : " + request.structureId()));
         if (structure.getStatut() != StatutStructure.ACTIF) {
-            throw new IllegalArgumentException("La structure doit etre active.");
+            throw new IllegalArgumentException("Impossible de créer une bande : la structure (ID=" + request.structureId() + ") n'est pas active. Statut actuel : " + structure.getStatut());
         }
         if (structure instanceof Enclos e && e.getEspecesCompatibles() != null && !e.getEspecesCompatibles().contains(request.espece().name())) {
-            throw new IncompatibiliteEspeceException("Structure incompatible avec l'espece " + request.espece());
+            throw new IncompatibiliteEspeceException("Impossible de créer la bande : l'enclos (ID=" + request.structureId() + ") n'est pas compatible avec l'espèce " + request.espece() + ". Espèces compatibles : " + e.getEspecesCompatibles());
         }
         Bande bande = bandeMapper.toEntity(request);
         bande.setStructure(structure);
         
         if (request.siteId() != null) {
             Site site = siteRepository.findById(request.siteId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Site", request.siteId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Site non trouvé avec l'ID : " + request.siteId()));
             bande.setSite(site);
         }
         
@@ -108,7 +108,7 @@ public class BandeService {
 
     @Transactional
     public BandeResponse update(Long id, BandeRequest request) {
-        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande", id));
+        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande non trouvée avec l'ID : " + id));
         bande.setNom(request.nom());
         bande.setEspece(request.espece());
         bande.setRace(request.race());
@@ -145,18 +145,18 @@ public class BandeService {
         
         if (request.siteId() != null && !Objects.equals(request.siteId(), bande.getSite() != null ? bande.getSite().getId() : null)) {
             var site = siteRepository.findById(request.siteId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Site", request.siteId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Site non trouvé avec l'ID : " + request.siteId()));
             bande.setSite(site);
         }
         
         if (request.structureId() != null && !Objects.equals(request.structureId(), bande.getStructure().getId())) {
             Structure destination = structureRepository.findById(request.structureId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Structure", request.structureId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Structure non trouvée avec l'ID : " + request.structureId()));
             if (destination.getStatut() != StatutStructure.ACTIF) {
-                throw new IllegalArgumentException("La structure doit etre active.");
+                throw new IllegalArgumentException("Impossible de mettre à jour la bande : la structure de destination (ID=" + request.structureId() + ") n'est pas active. Statut actuel : " + destination.getStatut());
             }
             if (destination instanceof Enclos e && e.getEspecesCompatibles() != null && !e.getEspecesCompatibles().contains(request.espece().name())) {
-                throw new IncompatibiliteEspeceException("Structure incompatible avec l'espece " + request.espece());
+                throw new IncompatibiliteEspeceException("Impossible de mettre à jour la bande : l'enclos de destination (ID=" + request.structureId() + ") n'est pas compatible avec l'espèce " + request.espece() + ". Espèces compatibles : " + e.getEspecesCompatibles());
             }
             bande.setStructure(destination);
             enregistrerMouvementTransfert(bande, destination);
@@ -166,12 +166,12 @@ public class BandeService {
 
     @Transactional
     public void sortieCollective(Long id, TypeMouvement typeMouvement, LocalDate dateSortie, Integer quantite, BigDecimal poidsKg, BigDecimal prixUnitaire, String motif, String operateurNom) {
-        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande", id));
+        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande non trouvée avec l'ID : " + id));
         if (bande.getStatut() != StatutBande.EN_COURS) {
-            throw new IllegalArgumentException("La bande doit etre en cours.");
+            throw new IllegalArgumentException("Impossible d'enregistrer une sortie collective : la bande (ID=" + id + ") n'est pas en cours. Statut actuel : " + bande.getStatut());
         }
         if (quantite == null || quantite <= 0) {
-            throw new IllegalArgumentException("La quantite doit etre superieure a 0.");
+            throw new IllegalArgumentException("Impossible d'enregistrer une sortie collective : la quantité doit être supérieure à 0. Valeur fournie : " + quantite);
         }
         if (quantite > bande.getEffectifActuel()) {
             throw new QuantiteInvalideException(quantite, bande.getEffectifActuel());
@@ -190,7 +190,7 @@ public class BandeService {
                 if (bande.getEffectifActuel() == 0) bande.setStatut(StatutBande.TERMINEE);
                 bande.setEffectifReformes((bande.getEffectifReformes() == null ? 0 : bande.getEffectifReformes()) + quantite);
             }
-            default -> throw new IllegalArgumentException("Type de mouvement invalide pour une sortie collective. Valeurs acceptées : SORTIE_VENTE, SORTIE_MORT, SORTIE_REFORME.");
+            default -> throw new IllegalArgumentException("Type de mouvement invalide pour une sortie collective. Valeurs acceptées : SORTIE_VENTE, SORTIE_MORT, SORTIE_REFORME. Valeur fournie : " + typeMouvement);
         }
         if (bande.getEffectifActuel() == 0) {
             bande.setDateSortieReelle(dateSortie);
@@ -210,21 +210,21 @@ public class BandeService {
 
     @Transactional
     public void transfert(Long id, Long structureDestinationId, String operateurNom, String motif) {
-        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande", id));
+        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande non trouvée avec l'ID : " + id));
         if (bande.getStatut() != StatutBande.EN_COURS) {
-            throw new IllegalArgumentException("La bande doit etre en cours.");
+            throw new IllegalArgumentException("Impossible de transférer la bande : la bande (ID=" + id + ") n'est pas en cours. Statut actuel : " + bande.getStatut());
         }
         Structure destination = structureRepository.findById(structureDestinationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Structure", structureDestinationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Structure de destination non trouvée avec l'ID : " + structureDestinationId));
         bande.setStructure(destination);
         enregistrerMouvementTransfert(bande, destination);
     }
 
     @Transactional
     public BandeResponse cloturer(Long id) {
-        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande", id));
+        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande non trouvée avec l'ID : " + id));
         if (bande.getStatut() != StatutBande.EN_COURS) {
-            throw new IllegalArgumentException("La bande doit etre en cours pour etre cloturee.");
+            throw new IllegalArgumentException("Impossible de clôturer la bande : la bande (ID=" + id + ") n'est pas en cours. Statut actuel : " + bande.getStatut());
         }
         bande.setStatut(StatutBande.TERMINEE);
         bande.setDateSortieReelle(LocalDate.now());
@@ -233,7 +233,7 @@ public class BandeService {
 
     @Transactional
     public void mettreAJourPerformances(Long id) {
-        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande", id));
+        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande non trouvée avec l'ID : " + id));
         List<Animal> animaux = animalRepository.findByBandeId(id);
         if (animaux == null || animaux.isEmpty()) {
             return;

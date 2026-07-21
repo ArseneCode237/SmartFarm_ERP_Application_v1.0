@@ -1,21 +1,30 @@
 package com.reseau_partage.animaux.controller;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.reseau_partage.animaux.dto.bande.BandeRequest;
 import com.reseau_partage.animaux.dto.bande.BandeResponse;
 import com.reseau_partage.animaux.service.BandeService;
 import com.reseau_partage.core.entities.Espece;
 import com.reseau_partage.core.entities.StatutBande;
 import com.reseau_partage.core.entities.TypeMouvement;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/animaux/bandes")
@@ -91,9 +100,9 @@ public class BandeController {
     }
 
     @PostMapping("/{id}/performances")
-    public ResponseEntity<Void> performances(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> performances(@PathVariable Long id) {
         service.mettreAJourPerformances(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of("message", "Performances de la bande id=" + id + " mises à jour avec succès."));
     }
 
     @GetMapping("/echeances")
