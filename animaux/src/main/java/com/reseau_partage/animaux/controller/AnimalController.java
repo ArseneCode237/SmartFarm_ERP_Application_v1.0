@@ -41,7 +41,7 @@ public class AnimalController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@Valid @RequestBody AnimalRequest request, Authentication authentication) {
         AnimalResponse response = service.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("data", response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("data", response, "message", "Animal créé avec succès. codeUnique=" + response.codeUnique()));
     }
 
     @GetMapping
@@ -69,11 +69,12 @@ public class AnimalController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable Long id, @Valid @RequestBody AnimalRequest request) {
-        return ResponseEntity.ok(Map.of("data", service.update(id, request)));
+        AnimalResponse response = service.update(id, request);
+        return ResponseEntity.ok(Map.of("data", response, "message", "Animal id=" + id + " mis à jour avec succès."));
     }
 
     @PostMapping("/{id}/sortie")
-    public ResponseEntity<Void> sortie(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<Map<String, String>> sortie(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         TypeMouvement type = TypeMouvement.valueOf(((String) body.get("typeMouvement")).toUpperCase());
         LocalDate date = LocalDate.parse((String) body.get("dateSortie"));
         BigDecimal poids = body.get("poidsKg") != null ? new BigDecimal(body.get("poidsKg").toString()) : null;
@@ -82,16 +83,16 @@ public class AnimalController {
         String causeMort = (String) body.get("causeMort");
         String operateur = (String) body.get("operateurNom");
         service.declarerSortie(id, type, date, poids, prix, motif, causeMort, operateur);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of("message", "Sortie enregistrée pour l'animal id=" + id + " (type=" + type + ", date=" + date + ")."));
     }
 
     @PostMapping("/{id}/transfert")
-    public ResponseEntity<Void> transfert(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<Map<String, String>> transfert(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         Long destination = Long.parseLong(body.get("structureDestinationId").toString());
         String operateur = (String) body.get("operateurNom");
         String motif = (String) body.get("motif");
         service.transferer(id, destination, operateur, motif);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of("message", "Transfert effectué pour l'animal id=" + id + " vers la structure " + destination + "."));
     }
 
     @GetMapping("/{id}/genealogie")

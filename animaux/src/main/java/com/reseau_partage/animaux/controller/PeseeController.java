@@ -24,13 +24,14 @@ public class PeseeController {
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> enregistrer(@RequestBody PeseeRequest request) {
-        return ResponseEntity.ok(Map.of("data", service.enregistrerPesee(request)));
+        PeseeResponse data = service.enregistrerPesee(request);
+        return ResponseEntity.ok(Map.of("data", data, "message", "Pesée enregistrée avec succès. Poids : " + request.poidsKg() + " kg, date : " + data.datePesee() + "."));
     }
 
     @PostMapping("/bande/{id}")
     public ResponseEntity<Map<String, Object>> peseeCollective(@PathVariable Long id, @RequestBody PeseeRequest request) {
         List<PeseeResponse> resultats = service.peseeCollectiveBande(id, request);
-        return ResponseEntity.ok(Map.of("content", resultats, "totalElements", resultats.size()));
+        return ResponseEntity.ok(Map.of("content", resultats, "totalElements", resultats.size(), "message", "Pesée collective effectuée sur la bande id=" + id + ". " + resultats.size() + " animaux pesés."));
     }
 
     @GetMapping("/animal/{id}")
@@ -56,12 +57,12 @@ public class PeseeController {
     @GetMapping("/indicateurs/{bandeId}")
     public ResponseEntity<Map<String, Object>> indicateurs(@PathVariable Long bandeId) {
         IndicateursBandeResponse indicateurs = service.indicateursBande(bandeId);
-        return ResponseEntity.ok(Map.of("data", indicateurs));
+        return ResponseEntity.ok(Map.of("data", indicateurs, "message", "Indicateurs calculés pour la bande id=" + bandeId + ". Poids moyen : " + indicateurs.poidsMoyen() + " kg, CV : " + indicateurs.cvPct() + "%."));
     }
 
     @GetMapping("/previsions/{bandeId}")
     public ResponseEntity<Map<String, Object>> previsions(@PathVariable Long bandeId) {
         PrevisionSortieResponse prevision = service.prevoirSortie(bandeId);
-        return ResponseEntity.ok(Map.of("data", prevision));
+        return ResponseEntity.ok(Map.of("data", prevision, "message", "Prévision calculée pour la bande id=" + bandeId + ". Sortie prévue le " + prevision.datePrevueSortie() + ", poids cible : " + prevision.poidsPrevuKg() + " kg."));
     }
 }

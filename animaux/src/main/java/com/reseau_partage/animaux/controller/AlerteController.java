@@ -23,6 +23,6 @@ public class AlerteController {
     public ResponseEntity<Map<String, Object>> alertesFerme(@PathVariable Long fermeId,
                                                             @RequestParam(defaultValue = "30") int jours) {
         List<AlerteResponse> alertes = service.alertesFerme(fermeId, jours);
-        return ResponseEntity.ok(Map.of("content", alertes, "totalElements", alertes.size()));
+        return ResponseEntity.ok(Map.of("content", alertes, "totalElements", alertes.size(), "message", alertes.size() + " alerte(s) détectée(s) pour la ferme " + fermeId + " (horizon " + jours + " jours)."));
     }
 }

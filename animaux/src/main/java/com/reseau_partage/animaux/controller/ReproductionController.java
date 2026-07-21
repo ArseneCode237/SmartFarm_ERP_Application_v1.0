@@ -25,7 +25,8 @@ public class ReproductionController {
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> enregistrerSaillie(@RequestBody EvenementReproductionRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("data", service.enregistrerSaillie(request)));
+        EvenementReproductionResponse data = service.enregistrerSaillie(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("data", data, "message", "Événement reproduction enregistré. Femelle id=" + request.femelleId() + ", type=" + request.type() + ", mise-bas prévue le " + data.dateMiseBasPrevue() + "."));
     }
 
     @GetMapping("/animal/{id}")
@@ -35,12 +36,14 @@ public class ReproductionController {
 
     @PostMapping("/{id}/mise-bas")
     public ResponseEntity<Map<String, Object>> declarerMiseBas(@PathVariable Long id, @RequestBody MiseBasRequest request) {
-        return ResponseEntity.ok(Map.of("data", service.declarerMiseBas(id, request)));
+        EvenementReproductionResponse data = service.declarerMiseBas(id, request);
+        return ResponseEntity.ok(Map.of("data", data, "message", "Mise-bas déclarée pour l'événement id=" + id + ". Nombre nés vivants : " + request.nombreNesVivants() + "."));
     }
 
     @PutMapping("/{id}/sevrage")
     public ResponseEntity<Map<String, Object>> enregistrerSevrage(@PathVariable Long id, @RequestBody SevrageRequest request) {
-        return ResponseEntity.ok(Map.of("data", service.enregistrerSevrage(id, request)));
+        EvenementReproductionResponse data = service.enregistrerSevrage(id, request);
+        return ResponseEntity.ok(Map.of("data", data, "message", "Sevrage enregistré pour l'événement id=" + id + ". Date sevrage : " + request.dateSevrageReel() + ", poids : " + request.poidsAuSevrageKg() + " kg."));
     }
 
     @GetMapping("/alertes")
@@ -49,8 +52,8 @@ public class ReproductionController {
     }
 
     @PatchMapping("/{id}/statut-reproducteur")
-    public ResponseEntity<Void> changerStatut(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Object>> changerStatut(@PathVariable Long id, @RequestBody Map<String, String> body) {
         service.changerStatutReproducteur(id, body.get("statut"));
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of("message", "Statut reproducteur de l'animal id=" + id + " mis à jour vers " + body.get("statut") + "."));
     }
 }

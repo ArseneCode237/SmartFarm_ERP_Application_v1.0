@@ -39,8 +39,9 @@ public class PorcinController {
      */
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@Valid @RequestBody PorcinRequest request) {
+        PorcinResponse data = service.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("data", service.create(request)));
+                .body(Map.of("data", data, "message", "Porcin créé avec succès. codeUnique=" + data.codeUnique()));
     }
 
     /**
@@ -92,7 +93,8 @@ public class PorcinController {
                     "Statut invalide : " + body.get("statut") +
                     ". Valeurs acceptées : " + java.util.Arrays.toString(StatutReproductifPorcin.values()));
         }
-        return ResponseEntity.ok(Map.of("data", service.changerStatut(id, nouveau)));
+        PorcinResponse data = service.changerStatut(id, nouveau);
+        return ResponseEntity.ok(Map.of("data", data, "message", "Statut reproductif mis à jour vers " + nouveau + " pour le porc id=" + id));
     }
 
     /**
@@ -106,7 +108,8 @@ public class PorcinController {
             @RequestBody Map<String, Object> body) {
         Long structureDestId = Long.parseLong(body.get("structureDestinationId").toString());
         String motif = (String) body.get("motif");
-        return ResponseEntity.ok(Map.of("data", service.transferer(id, structureDestId, motif)));
+        PorcinResponse data = service.transferer(id, structureDestId, motif);
+        return ResponseEntity.ok(Map.of("data", data, "message", "Transfert effectué vers la structure " + structureDestId + " pour le porc id=" + id));
     }
 
     /**
@@ -115,12 +118,12 @@ public class PorcinController {
      * Corps : { "motif": "5ème portée atteinte" }
      */
     @PostMapping("/{id}/reformer")
-    public ResponseEntity<Void> reformer(
+    public ResponseEntity<Map<String, String>> reformer(
             @PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body) {
         String motif = body != null ? body.get("motif") : null;
         service.reformer(id, motif);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of("message", "Porc id=" + id + " réformé avec succès. Motif : " + motif));
     }
 
     /**

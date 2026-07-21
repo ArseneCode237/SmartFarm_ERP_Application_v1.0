@@ -1,13 +1,19 @@
 package com.reseau_partage.animaux.controller;
 
-import com.reseau_partage.animaux.dto.porcin.ExtractionBandeRequest;
-import com.reseau_partage.animaux.service.ExtractionBandeService;
-import jakarta.validation.Valid;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
+import com.reseau_partage.animaux.dto.porcin.ExtractionBandeRequest;
+import com.reseau_partage.animaux.dto.porcin.ExtractionBandeResponse;
+import com.reseau_partage.animaux.service.ExtractionBandeService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/animaux/porcs/extractions")
@@ -38,7 +44,8 @@ public class ExtractionBandeController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> extraire(
             @Valid @RequestBody ExtractionBandeRequest request) {
+        ExtractionBandeResponse data = service.extraire(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("data", service.extraire(request)));
+                .body(Map.of("data", data, "message", data.nbExtraits() + " animaux extraits de la bande id=" + request.bandeId() + " et passés en suivi individuel."));
     }
 }

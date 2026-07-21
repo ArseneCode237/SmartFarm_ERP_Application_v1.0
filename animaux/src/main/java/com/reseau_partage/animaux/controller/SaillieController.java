@@ -2,6 +2,7 @@ package com.reseau_partage.animaux.controller;
 
 import com.reseau_partage.animaux.dto.saillie.SaillieConfirmationRequest;
 import com.reseau_partage.animaux.dto.saillie.SaillieRequest;
+import com.reseau_partage.animaux.dto.saillie.SaillieResponse;
 import com.reseau_partage.animaux.service.SaillieService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -27,8 +28,9 @@ public class SaillieController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> enregistrer(
             @Valid @RequestBody SaillieRequest request) {
+        SaillieResponse data = service.enregistrer(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("data", service.enregistrer(request)));
+                .body(Map.of("data", data, "message", "Saillie enregistrée avec succès. Truie id=" + request.truieId() + ", type=" + request.typeSaillie() + ", mise-bas prévue le " + data.dateMiseBasPrevue() + "."));
     }
 
     /**
@@ -59,7 +61,11 @@ public class SaillieController {
     public ResponseEntity<Map<String, Object>> confirmer(
             @PathVariable Long id,
             @Valid @RequestBody SaillieConfirmationRequest request) {
-        return ResponseEntity.ok(Map.of("data", service.confirmer(id, request)));
+        SaillieResponse data = service.confirmer(id, request);
+        String msg = request.statut() == com.reseau_partage.core.entities.StatutSaillie.CONFIRMEE
+                ? "Gestation confirmée pour la saillie id=" + id + " (écho le " + request.dateEcho() + ")."
+                : "Échec de gestation enregistré pour la saillie id=" + id + ". Motif : " + request.motifEchec();
+        return ResponseEntity.ok(Map.of("data", data, "message", msg));
     }
 
     /**
@@ -72,7 +78,8 @@ public class SaillieController {
             @PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body) {
         String notes = body != null ? body.get("notes") : null;
-        return ResponseEntity.ok(Map.of("data", service.avortement(id, notes)));
+        SaillieResponse data = service.avortement(id, notes);
+        return ResponseEntity.ok(Map.of("data", data, "message", "Avortement déclaré pour la saillie id=" + id + ". La truie retourne en chaleur."));
     }
 
     /**

@@ -34,8 +34,9 @@ public class MiseBaController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> declarer(
             @Valid @RequestBody MiseBaRequest request) {
+        MiseBaResponse data = service.declarer(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("data", service.declarer(request)));
+                .body(Map.of("data", data, "message", "Mise-bas déclarée avec succès. Portée #" + data.numeroPortee() + " de la truie " + data.truieCode() + " : " + data.nbNesVivants() + " porcelets vivants."));
     }
 
     /**
@@ -66,7 +67,8 @@ public class MiseBaController {
     public ResponseEntity<Map<String, Object>> sevrer(
             @PathVariable Long id,
             @Valid @RequestBody SevrageRequest request) {
-        return ResponseEntity.ok(Map.of("data", service.sevrer(id, request)));
+        MiseBaResponse data = service.sevrer(id, request);
+        return ResponseEntity.ok(Map.of("data", data, "message", "Sevrage enregistré avec succès. " + request.nbSevres() + " porcelets sevrés, poids moyen " + request.poidsMoyenSevrageKg() + " kg."));
     }
 
     /**

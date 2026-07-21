@@ -30,7 +30,7 @@ public class BandeController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@Valid @RequestBody BandeRequest request, Authentication authentication) {
         BandeResponse response = service.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("data", response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("data", response, "message", "Bande créée avec succès. codeBande=" + response.codeBande() + ", effectif initial=" + response.effectifInitial()));
     }
 
     @GetMapping
@@ -56,11 +56,12 @@ public class BandeController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable Long id, @Valid @RequestBody BandeRequest request) {
-        return ResponseEntity.ok(Map.of("data", service.update(id, request)));
+        BandeResponse response = service.update(id, request);
+        return ResponseEntity.ok(Map.of("data", response, "message", "Bande id=" + id + " mise à jour avec succès."));
     }
 
     @PostMapping("/{id}/sortie")
-    public ResponseEntity<Void> sortie(
+    public ResponseEntity<Map<String, String>> sortie(
             @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
         TypeMouvement type = TypeMouvement.valueOf(((String) body.get("typeMouvement")).toUpperCase());
@@ -71,21 +72,22 @@ public class BandeController {
         String motif = (String) body.get("motif");
         String operateur = (String) body.get("operateurNom");
         service.sortieCollective(id, type, date, quantite, poids, prix, motif, operateur);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of("message", "Sortie collective enregistrée pour la bande id=" + id + " (type=" + type + ", quantite=" + quantite + ")."));
     }
 
     @PostMapping("/{id}/transfert")
-    public ResponseEntity<Void> transfert(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<Map<String, String>> transfert(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         Long destination = Long.parseLong(body.get("structureDestinationId").toString());
         String operateur = (String) body.get("operateurNom");
         String motif = (String) body.get("motif");
         service.transfert(id, destination, operateur, motif);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of("message", "Transfert effectué pour la bande id=" + id + " vers la structure " + destination + "."));
     }
 
     @PostMapping("/{id}/cloturer")
     public ResponseEntity<Map<String, Object>> cloturer(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("data", service.cloturer(id)));
+        BandeResponse response = service.cloturer(id);
+        return ResponseEntity.ok(Map.of("data", response, "message", "Bande id=" + id + " clôturée avec succès. Statut=" + response.statut()));
     }
 
     @PostMapping("/{id}/performances")

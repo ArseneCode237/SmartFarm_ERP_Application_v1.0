@@ -37,7 +37,8 @@ public class ConfigEspeceController {
 
     @PutMapping("/especes/{espece}")
     public ResponseEntity<Map<String, Object>> modifierConfig(@PathVariable Espece espece, @RequestBody ConfigEspeceRequest request) {
-        return ResponseEntity.ok(Map.of("data", service.modifierConfig(espece, request)));
+        ConfigEspeceResponse data = service.modifierConfig(espece, request);
+        return ResponseEntity.ok(Map.of("data", data, "message", "Configuration de l'espèce " + espece + " modifiée avec succès."));
     }
 
     @GetMapping("/courbes/{espece}")
@@ -48,7 +49,7 @@ public class ConfigEspeceController {
     @PostMapping("/courbes")
     public ResponseEntity<Map<String, Object>> ajouterPointsCourbe(@RequestBody List<CourbeCroissanceRequest> requests) {
         List<CourbeCroissanceReference> resultats = service.ajouterPointsCourbe(requests);
-        return ResponseEntity.ok(Map.of("content", resultats, "totalElements", resultats.size()));
+        return ResponseEntity.ok(Map.of("content", resultats, "totalElements", resultats.size(), "message", resultats.size() + " points de courbe ajoutés avec succès."));
     }
 
     @GetMapping("/evenements/{espece}")
@@ -59,6 +60,6 @@ public class ConfigEspeceController {
     @PostMapping("/evenements")
     public ResponseEntity<Map<String, Object>> creerEvenement(@RequestBody TypeEvenementCustomRequest request) {
         TypeEvenementCustom resultat = service.creerEvenement(request);
-        return ResponseEntity.ok(Map.of("data", resultat));
+        return ResponseEntity.ok(Map.of("data", resultat, "message", "Événement custom '" + resultat.getLibelle() + "' créé pour l'espèce " + request.espece() + "."));
     }
 }
