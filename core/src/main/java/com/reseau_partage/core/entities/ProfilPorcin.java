@@ -108,6 +108,16 @@ public class ProfilPorcin {
     @Column(name = "date_modification")
     private LocalDateTime dateModification;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cause_archivage")
+    private CauseArchivage causeArchivage;
+
+    @Column(name = "motif_archivage", length = 255)
+    private String motifArchivage;
+
+    @Column(name = "date_archivage")
+    private LocalDate dateArchivage;
+
     @PrePersist
     protected void onCreate() {
         this.dateCreation    = LocalDateTime.now();
@@ -191,4 +201,11 @@ public class ProfilPorcin {
 
     public LocalDateTime getDateCreation() { return dateCreation; }
     public LocalDateTime getDateModification() { return dateModification; }
+
+    public CauseArchivage getCauseArchivage() { return causeArchivage; }
+    public void setCauseArchivage(CauseArchivage causeArchivage) { this.causeArchivage = causeArchivage; }
+    public String getMotifArchivage() { return motifArchivage; }
+    public void setMotifArchivage(String motifArchivage) { this.motifArchivage = motifArchivage; }
+    public LocalDate getDateArchivage() { return dateArchivage; }
+    public void setDateArchivage(LocalDate dateArchivage) { this.dateArchivage = dateArchivage; }
 }

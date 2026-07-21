@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.reseau_partage.animaux.dto.porcin.PorcinRequest;
 import com.reseau_partage.animaux.dto.porcin.PorcinResponse;
 import com.reseau_partage.animaux.dto.porcin.PorcinUpdateRequest;
+import com.reseau_partage.animaux.dto.porcin.ArchivagePorcinRequest;
 import com.reseau_partage.animaux.service.PorcinService;
 import com.reseau_partage.core.entities.StatutReproductifPorcin;
 
@@ -112,19 +113,18 @@ public class PorcinController {
         return ResponseEntity.ok(Map.of("data", data, "message", "Transfert effectué vers la structure " + structureDestId + " pour le porc id=" + id));
     }
 
-    /**
-     * POST /api/animaux/porcs/{id}/reformer
-     * Réformer définitivement un animal.
-     * Corps : { "motif": "5ème portée atteinte" }
-     */
-    @PostMapping("/{id}/reformer")
-    public ResponseEntity<Map<String, String>> reformer(
-            @PathVariable Long id,
-            @RequestBody(required = false) Map<String, String> body) {
-        String motif = body != null ? body.get("motif") : null;
-        service.reformer(id, motif);
-        return ResponseEntity.ok(Map.of("message", "Porc id=" + id + " réformé avec succès. Motif : " + motif));
-    }
+        /**
+         * POST /api/animaux/porcs/{id}/reformer
+         * Archiver un porcin avec cause explicite (VENTE, MORT, DON, RAISON_PERSONNELLE, REFORME_PRODUCTIVE, AUTRE).
+         * Corps : { "cause": "VENTE", "motif": "Vente au marché du..." }
+         */
+        @PostMapping("/{id}/reformer")
+        public ResponseEntity<Map<String, Object>> reformer(
+                @PathVariable Long id,
+                @Valid @RequestBody ArchivagePorcinRequest request) {
+            PorcinResponse data = service.reformer(id, request.cause(), request.motif());
+            return ResponseEntity.ok(Map.of("data", data, "message", "Porc id=" + id + " archivé avec succès. Cause : " + request.cause() + ". Motif : " + request.motif()));
+        }
 
     /**
      * GET /api/animaux/porcs/{id}/carriere

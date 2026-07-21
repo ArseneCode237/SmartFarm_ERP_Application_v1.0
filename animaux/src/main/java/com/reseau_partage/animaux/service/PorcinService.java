@@ -12,8 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.reseau_partage.animaux.dto.porcin.PorcinRequest;
 import com.reseau_partage.animaux.dto.porcin.PorcinResponse;
 import com.reseau_partage.animaux.dto.porcin.PorcinUpdateRequest;
+import com.reseau_partage.animaux.dto.porcin.ArchivagePorcinRequest;
 import com.reseau_partage.animaux.exception.ResourceNotFoundException;
 import com.reseau_partage.core.entities.Animal;
+import com.reseau_partage.core.entities.CauseArchivage;
 import com.reseau_partage.core.entities.Espece;
 import com.reseau_partage.core.entities.ModeSuivi;
 import com.reseau_partage.core.entities.MouvementAnimal;
@@ -290,20 +292,27 @@ public class PorcinService {
         return toResponse(animal);
     }
 
-    /** Réformer définitivement un animal. */
+    /** Réformer définitivement un animal avec cause d'archivage. */
     @Transactional
-    public void reformer(Long id, String motif) {
+    public PorcinResponse reformer(Long id, CauseArchivage cause, String motif) {
+        if (cause == null) {
+            throw new IllegalArgumentException("La cause d'archivage est obligatoire. Valeurs acceptées : " + java.util.Arrays.toString(CauseArchivage.values()));
+        }
         Animal animal = animalRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Animal", id));
         animal.setStatut(StatutAnimal.REFORME);
-        animal.setDateSortie(LocalDate.now());
-        animal.setMotifSortie(motif);
+        animal.setDateSortie(java.time.LocalDate.now());
+        animal.setMotifSortie(motif != null ? motif : cause.name());
         animalRepository.save(animal);
 
         profilPorcinRepository.findByAnimalId(id).ifPresent(p -> {
             p.setStatutReproductif(StatutReproductifPorcin.REFORME);
+            p.setCauseArchivage(cause);
+            p.setMotifArchivage(motif);
+            p.setDateArchivage(java.time.LocalDate.now());
             profilPorcinRepository.save(p);
         });
+        return toResponse(animal);
     }
 
     /** Historique reproductif complet d'une truie (saillies + portées + stats). */
