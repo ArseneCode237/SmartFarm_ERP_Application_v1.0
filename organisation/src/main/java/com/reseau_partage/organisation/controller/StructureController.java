@@ -61,6 +61,15 @@ public class StructureController {
     }
 
     /**
+     * GET /api/organisation/structures/{id}/animaux
+     * Lister les animaux rattachés à une structure.
+     */
+    @GetMapping("/{id}/animaux")
+    public ResponseEntity<List<Map<String, Object>>> listAnimals(@PathVariable Long id) {
+        return ResponseEntity.ok(service.listAnimalsForStructure(id));
+    }
+
+    /**
      * PUT /api/organisation/structures/{id}
      * Modifier une structure. Le type de structure ne peut pas être changé.
      */

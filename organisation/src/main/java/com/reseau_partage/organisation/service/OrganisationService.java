@@ -13,6 +13,7 @@ import java.util.TreeMap;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.reseau_partage.core.entities.Animal;
 import com.reseau_partage.core.entities.Batiment;
 import com.reseau_partage.core.entities.Enclos;
 import com.reseau_partage.core.entities.Entrepot;
@@ -26,6 +27,7 @@ import com.reseau_partage.core.entities.StatutFerme;
 import com.reseau_partage.core.entities.StatutSite;
 import com.reseau_partage.core.entities.StatutStructure;
 import com.reseau_partage.core.entities.Structure;
+import com.reseau_partage.core.repository.AnimalRepository;
 import com.reseau_partage.core.repository.FermeRepository;
 import com.reseau_partage.core.repository.SiteRepository;
 import com.reseau_partage.core.repository.StructureRepository;
@@ -44,13 +46,16 @@ public class OrganisationService {
   private final SiteRepository sites;
   private final StructureRepository structures;
   private final UtilisateurRepository utilisateurs;
+  private final AnimalRepository animalRepository;
 
   public OrganisationService(FermeRepository fermes, SiteRepository sites,
-                             StructureRepository structures, UtilisateurRepository utilisateurs) {
+                             StructureRepository structures, UtilisateurRepository utilisateurs,
+                             AnimalRepository animalRepository) {
     this.fermes = fermes;
     this.sites = sites;
     this.structures = structures;
     this.utilisateurs = utilisateurs;
+    this.animalRepository = animalRepository;
   }
 
   public Map<String, Object> createFerme(FermeRequest r, String email) {
@@ -234,14 +239,21 @@ public class OrganisationService {
                      : s instanceof Poulailler p  ? p.getCapaciteMaxAnimaux()
                      : s instanceof Porcherie pc  ? pc.getCapaciteMaxAnimaux()
                      : null;
+    long animauxPresents = animalRepository.countByStructureId(id);
     Map<String, Object> out = new LinkedHashMap<>();
     out.put("structureId", id);
     out.put("typeStructure", type(s));
     out.put("capaciteMaxAnimaux", capacity);
-    out.put("animauxPresents", 0);
-    out.put("tauxOccupation", capacity == null ? null : 0);
-    out.put("niveauAlerte", null);
+    out.put("animauxPresents", animauxPresents);
+    out.put("tauxOccupation", capacity == null ? null : (capacity == 0 ? 0 : (double) animauxPresents * 100 / capacity));
+    out.put("niveauAlerte", capacity != null && animauxPresents >= capacity ? "ALERTE" : null);
     return out;
+  }
+
+  @Transactional(readOnly = true)
+  public List<Map<String, Object>> listAnimalsForStructure(Long id) {
+    getStructureEntity(id);
+    return animalRepository.findByStructureId(id).stream().map(this::animalSummary).toList();
   }
 
   private Ferme getFermeEntity(Long id) {
@@ -389,6 +401,20 @@ public class OrganisationService {
         || (f == StatutStructure.PRET && t == StatutStructure.ACTIF);
   }
 
+  private Map<String, Object> animalSummary(Animal animal) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("id", animal.getId());
+    m.put("codeUnique", animal.getCodeUnique());
+    m.put("nom", animal.getNom());
+    m.put("espece", animal.getEspece());
+    m.put("statut", animal.getStatut());
+    m.put("structureId", animal.getStructure() != null ? animal.getStructure().getId() : null);
+    m.put("structureNom", animal.getStructure() != null ? animal.getStructure().getNom() : null);
+    m.put("bandeId", animal.getBande() != null ? animal.getBande().getId() : null);
+    m.put("bandeNom", animal.getBande() != null ? animal.getBande().getNom() : null);
+    return m;
+  }
+
   private Map<String, Object> ferme(Ferme f) {
     Map<String, Object> m = new LinkedHashMap<>();
     m.put("id", f.getId());
@@ -445,6 +471,8 @@ public class OrganisationService {
     m.put("statut", s.getStatut());
     m.put("dateCreation", s.getDateCreation());
     m.put("dateDebutVide", s.getDateDebutVide());
+    m.put("nombreAnimaux", animalRepository.countByStructureId(s.getId()));
+    m.put("animaux", animalRepository.findByStructureId(s.getId()).stream().map(this::animalSummary).toList());
     // ── Attributs spécifiques selon le type ──────────────────────────────────
     if (s instanceof Batiment x) {
       m.put("capaciteMaxAnimaux", x.getCapaciteMaxAnimaux());
