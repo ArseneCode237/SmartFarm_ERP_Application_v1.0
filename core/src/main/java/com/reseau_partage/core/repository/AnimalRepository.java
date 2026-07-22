@@ -1,18 +1,18 @@
 package com.reseau_partage.core.repository;
 
-import com.reseau_partage.core.entities.Animal;
-import com.reseau_partage.core.entities.Espece;
-import com.reseau_partage.core.entities.StatutAnimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
+import com.reseau_partage.core.entities.Animal;
+import com.reseau_partage.core.entities.Espece;
+import com.reseau_partage.core.entities.StatutAnimal;
 
 public interface AnimalRepository extends JpaRepository<Animal, Long> {
 
