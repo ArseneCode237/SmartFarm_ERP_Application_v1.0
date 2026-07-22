@@ -46,6 +46,10 @@ public abstract class Structure {
         return id;
     }
 
+    public void setId(Long v) {
+        this.id = v;
+    }
+
     public Site getSite() {
         return site;
     }
