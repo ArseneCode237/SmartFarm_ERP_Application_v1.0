@@ -191,24 +191,33 @@ public class DeclarationService {
                         MotifDeclaration.ACCIDENT,
                         MotifDeclaration.PREDATEUR,
                         MotifDeclaration.CAUSE_INCONNUE,
+                        MotifDeclaration.INCONNU,
                         MotifDeclaration.MORT_NEE,
                         MotifDeclaration.ASPHYXIE,
-                        MotifDeclaration.CHALEUR_EXCESSIVE
+                        MotifDeclaration.CHALEUR_EXCESSIVE,
+                        MotifDeclaration.VIEILLESSE,
+                        MotifDeclaration.AUTRE
                 ),
                 TypeDeclaration.VENTE, List.of(
                         MotifDeclaration.PARTICULIER,
                         MotifDeclaration.GROSSISTE,
                         MotifDeclaration.ABATTOIR,
+                        MotifDeclaration.ABATTAGE,
                         MotifDeclaration.BOUCHERIE,
                         MotifDeclaration.ELEVEUR,
-                        MotifDeclaration.RESTAURATION
+                        MotifDeclaration.RESTAURATION,
+                        MotifDeclaration.MARCHE,
+                        MotifDeclaration.AUTRE
                 ),
                 TypeDeclaration.REFORME, List.of(
                         MotifDeclaration.PRODUCTIVITE,
                         MotifDeclaration.AGE,
                         MotifDeclaration.BLESSURE,
                         MotifDeclaration.MALADIE_CHRONIQUE,
-                        MotifDeclaration.DEFAUT_MORPHOLOGIQUE
+                        MotifDeclaration.DEFAUT_MORPHOLOGIQUE,
+                        MotifDeclaration.SANITAIRE,
+                        MotifDeclaration.RENOUVELLEMENT,
+                        MotifDeclaration.AUTRE
                 )
         );
 
