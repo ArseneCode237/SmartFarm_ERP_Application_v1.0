@@ -23,6 +23,20 @@ public interface DeclarationBandeRepository extends JpaRepository<DeclarationBan
 
     List<DeclarationBande> findByFermeIdAndStatut(Long fermeId, StatutDeclaration statut);
 
+    @Query("SELECT d FROM DeclarationBande d WHERE " +
+           "(:fermeId IS NULL OR d.fermeId = :fermeId) AND " +
+           "(:type IS NULL OR d.type = :type) AND " +
+           "(:statut IS NULL OR d.statut = :statut) AND " +
+           "(:dateDebut IS NULL OR d.dateDeclaration >= :dateDebut) AND " +
+           "(:dateFin IS NULL OR d.dateDeclaration <= :dateFin)")
+    Page<DeclarationBande> findAllFiltered(
+            @Param("fermeId") Long fermeId,
+            @Param("type") TypeDeclaration type,
+            @Param("statut") StatutDeclaration statut,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin,
+            Pageable pageable);
+
     @Query("SELECT d.dateDeclaration, SUM(d.quantite) FROM DeclarationBande d WHERE d.bandeId = :bandeId AND d.type = 'MORT' AND d.statut = 'ACTIF' GROUP BY d.dateDeclaration ORDER BY d.dateDeclaration ASC")
     List<Object[]> findCourbeMortalite(@Param("bandeId") Long bandeId);
 

@@ -346,6 +346,14 @@
           }
         },
         {
+          "name": "Lister toutes les déclarations (avec filtres)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{authToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/animaux/declarations?fermeId={{fermeIdA}}&type=MORT&dateDebut=2026-07-01&dateFin=2026-07-31&page=0&size=20&sortBy=dateDeclaration&sortDir=desc", "host": ["{{baseUrl}}"], "path": ["api", "animaux", "declarations"], "query": [ { "key": "fermeId", "value": "{{fermeIdA}}" }, { "key": "type", "value": "MORT" }, { "key": "dateDebut", "value": "2026-07-01" }, { "key": "dateFin", "value": "2026-07-31" }, { "key": "page", "value": "0" }, { "key": "size", "value": "20" }, { "key": "sortBy", "value": "dateDeclaration" }, { "key": "sortDir", "value": "desc" } ] }
+          }
+        },
+        {
           "name": "Déclarer une vente sur la bande",
           "event": [
             { "listen": "test", "script": { "exec": ["pm.test('status 201', () => pm.response.to.have.status(201));"] } }

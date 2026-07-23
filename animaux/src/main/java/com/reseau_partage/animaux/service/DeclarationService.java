@@ -110,6 +110,10 @@ public class DeclarationService {
         return declarationRepo.findByBandeIdAndStatut(bandeId, StatutDeclaration.ACTIF, pageable).map(this::toResponse);
     }
 
+    public Page<DeclarationResponse> listerToutes(Long fermeId, TypeDeclaration type, StatutDeclaration statut, LocalDate dateDebut, LocalDate dateFin, Pageable pageable) {
+        return declarationRepo.findAllFiltered(fermeId, type, statut, dateDebut, dateFin, pageable).map(this::toResponse);
+    }
+
     public DeclarationStatsResponse getStatsBande(Long bandeId) {
         Bande bande = bandeRepo.findById(bandeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Bande non trouve avec l'identifiant: " + bandeId));
