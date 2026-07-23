@@ -123,6 +123,21 @@ public class Bande {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "total_declares_morts")
+    private Integer totalDeclaresMorts = 0;
+
+    @Column(name = "total_declares_vendus")
+    private Integer totalDeclaresVendus = 0;
+
+    @Column(name = "total_declares_reformes")
+    private Integer totalDeclaresReformes = 0;
+
+    @Column(name = "revenu_total_ventes", precision = 15, scale = 2)
+    private BigDecimal revenuTotalVentes = BigDecimal.ZERO;
+
+    @Column(name = "date_derniere_declaration")
+    private LocalDate dateDerniereDeclaration;
+
     @Column(name = "date_creation", updatable = false)
     private LocalDateTime dateCreation;
 
@@ -205,4 +220,16 @@ public class Bande {
     public LocalDateTime getDateCreation() { return dateCreation; }
     public LocalDateTime getDateModification() { return dateModification; }
     public void setDateModification(LocalDateTime dateModification) { this.dateModification = dateModification; }
+
+    // Nouveaux champs pour les déclarations
+    public Integer getTotalDeclaresMorts() { return totalDeclaresMorts; }
+    public void setTotalDeclaresMorts(Integer totalDeclaresMorts) { this.totalDeclaresMorts = totalDeclaresMorts; }
+    public Integer getTotalDeclaresVendus() { return totalDeclaresVendus; }
+    public void setTotalDeclaresVendus(Integer totalDeclaresVendus) { this.totalDeclaresVendus = totalDeclaresVendus; }
+    public Integer getTotalDeclaresReformes() { return totalDeclaresReformes; }
+    public void setTotalDeclaresReformes(Integer totalDeclaresReformes) { this.totalDeclaresReformes = totalDeclaresReformes; }
+    public BigDecimal getRevenuTotalVentes() { return revenuTotalVentes; }
+    public void setRevenuTotalVentes(BigDecimal revenuTotalVentes) { this.revenuTotalVentes = revenuTotalVentes; }
+    public LocalDate getDateDerniereDeclaration() { return dateDerniereDeclaration; }
+    public void setDateDerniereDeclaration(LocalDate dateDerniereDeclaration) { this.dateDerniereDeclaration = dateDerniereDeclaration; }
 }

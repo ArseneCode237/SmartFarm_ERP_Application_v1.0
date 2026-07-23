@@ -118,15 +118,21 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> badRequest(org.springframework.http.converter.HttpMessageNotReadableException ex, HttpServletRequest request) {
+        String rootMessage = ex.getMessage() != null ? ex.getMessage() : "";
         String message = "Requête invalide : ";
-        if (ex.getMessage() != null && ex.getMessage().contains("Enum")) {
-            message += "valeur d'enum incorrecte. Vérifiez les valeurs acceptées (ex: Provenance={NAISSANCE_INTERNE, ACHAT_EXTERNE, DON, INTERNE, EXTERNE}, Sexe={MALE, FEMELLE, INCONNU}, Espece={POULET, BOVIN, PORC...}).";
-        } else if (ex.getMessage() != null && ex.getMessage().contains("JSON parse error")) {
+        if (rootMessage.contains("Enum")) {
+            String enumName = extractBetween(rootMessage, "type `", "`");
+            String invalidValue = extractBetween(rootMessage, "from String \"", "\"");
+            if (invalidValue == null) invalidValue = extractBetween(rootMessage, "from String '", "'");
+            String acceptedValues = enumAcceptedValues(enumName);
+            message += "valeur d'enum incorrecte pour le champ " + safeFieldName(rootMessage, enumName) + " : '" + invalidValue + "'.";
+            message += " Valeurs acceptées pour " + enumName + " : [" + acceptedValues + "].";
+        } else if (rootMessage.contains("JSON parse error")) {
             message += "format JSON invalide. Vérifiez la syntaxe du body.";
-        } else if (ex.getMessage() != null && ex.getMessage().contains("LocalDate")) {
+        } else if (rootMessage.contains("LocalDate")) {
             message += "format de date invalide. Utilisez le format ISO_LOCAL_DATE (YYYY-MM-DD, ex: 2026-07-21).";
         } else {
-            message += ex.getMessage();
+            message += rootMessage;
         }
         Map<String, Object> errorResponse = buildErrorResponse(
                 400,
@@ -135,6 +141,51 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    private String extractBetween(String s, String start, String end) {
+        int i = s.indexOf(start);
+        if (i < 0) return null;
+        int from = i + start.length();
+        int j = s.indexOf(end, from);
+        if (j < 0) return s.substring(from).trim();
+        return s.substring(from, j).trim();
+    }
+
+    private String safeFieldName(String message, String enumName) {
+        String field = extractBetween(message, "field ", " ");
+        if (field == null || field.isBlank()) field = extractBetween(message, "property \"", "\"");
+        if (field == null || field.isBlank()) field = "`" + enumName + "`";
+        return field;
+    }
+
+    private String enumAcceptedValues(String enumName) {
+        if (enumName == null) return "";
+        return switch (enumName) {
+            case "Provenance" -> java.util.Arrays.toString(com.reseau_partage.core.entities.Provenance.values());
+            case "Sexe" -> java.util.Arrays.toString(com.reseau_partage.core.entities.Sexe.values());
+            case "Espece" -> java.util.Arrays.toString(com.reseau_partage.core.entities.Espece.values());
+            case "StatutAnimal" -> java.util.Arrays.toString(com.reseau_partage.core.entities.StatutAnimal.values());
+            case "StatutBande" -> java.util.Arrays.toString(com.reseau_partage.core.entities.StatutBande.values());
+            case "TypeMouvement" -> java.util.Arrays.toString(com.reseau_partage.core.entities.TypeMouvement.values());
+            case "ModeSuivi" -> java.util.Arrays.toString(com.reseau_partage.core.entities.ModeSuivi.values());
+            case "TypeProduction" -> java.util.Arrays.toString(com.reseau_partage.core.entities.TypeProduction.values());
+            case "TypeSaillie" -> java.util.Arrays.toString(com.reseau_partage.core.entities.TypeSaillie.values());
+            case "StatutSaillie" -> java.util.Arrays.toString(com.reseau_partage.core.entities.StatutSaillie.values());
+            case "TypeMiseBas" -> java.util.Arrays.toString(com.reseau_partage.core.entities.TypeMiseBas.values());
+            case "StatutReproductifPorcin" -> java.util.Arrays.toString(com.reseau_partage.core.entities.StatutReproductifPorcin.values());
+            case "CauseArchivage" -> java.util.Arrays.toString(com.reseau_partage.core.entities.CauseArchivage.values());
+            case "StatutReproducteur" -> java.util.Arrays.toString(com.reseau_partage.core.entities.StatutReproducteur.values());
+            case "StatutGestation" -> java.util.Arrays.toString(com.reseau_partage.core.entities.StatutGestation.values());
+            case "TypeReproduction" -> java.util.Arrays.toString(com.reseau_partage.core.entities.TypeReproduction.values());
+            case "Categorie" -> java.util.Arrays.toString(com.reseau_partage.core.entities.Categorie.values());
+            case "TypeDeclaration" -> java.util.Arrays.toString(com.reseau_partage.core.entities.TypeDeclaration.values());
+            case "MotifDeclaration" -> java.util.Arrays.toString(com.reseau_partage.core.entities.MotifDeclaration.values());
+            case "SourceDeclaration" -> java.util.Arrays.toString(com.reseau_partage.core.entities.SourceDeclaration.values());
+            case "StatutDeclaration" -> java.util.Arrays.toString(com.reseau_partage.core.entities.StatutDeclaration.values());
+            case "ActionHistorique" -> java.util.Arrays.toString(com.reseau_partage.core.entities.ActionHistorique.values());
+            default -> enumName;
+        };
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

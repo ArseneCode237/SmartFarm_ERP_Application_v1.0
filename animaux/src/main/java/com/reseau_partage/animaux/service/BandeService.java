@@ -87,6 +87,10 @@ public class BandeService {
         bande.setEffectifMorts(0);
         bande.setEffectifVendus(0);
         bande.setEffectifReformes(0);
+        bande.setTotalDeclaresMorts(0);
+        bande.setTotalDeclaresVendus(0);
+        bande.setTotalDeclaresReformes(0);
+        bande.setRevenuTotalVentes(java.math.BigDecimal.ZERO);
         
         bande.setCodeBande(genererCodeBande(request));
         bande.setStatut(request.statut() != null ? request.statut() : StatutBande.EN_COURS);
@@ -128,6 +132,19 @@ public class BandeService {
         bande.setEffectifMorts(request.effectifMorts());
         bande.setEffectifVendus(request.effectifVendus());
         bande.setEffectifReformes(request.effectifReformes());
+        if (request.totalDeclaresMorts() != null) {
+            bande.setTotalDeclaresMorts(request.totalDeclaresMorts());
+        }
+        if (request.totalDeclaresVendus() != null) {
+            bande.setTotalDeclaresVendus(request.totalDeclaresVendus());
+        }
+        if (request.totalDeclaresReformes() != null) {
+            bande.setTotalDeclaresReformes(request.totalDeclaresReformes());
+        }
+        if (request.revenuTotalVentes() != null) {
+            bande.setRevenuTotalVentes(request.revenuTotalVentes());
+        }
+        bande.setDateDerniereDeclaration(request.dateDerniereDeclaration());
         bande.setPoidsMoyenEntreeKg(request.poidsMoyenEntreeKg());
         bande.setPoidsMoyenActuelKg(request.poidsMoyenActuelKg());
         bande.setPoidsTotalSortie(request.poidsTotalSortie());

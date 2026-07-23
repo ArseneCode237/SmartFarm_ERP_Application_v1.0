@@ -30,6 +30,11 @@ public interface BandeMapper {
     @Mapping(target = "effectifMorts", ignore = true)
     @Mapping(target = "effectifVendus", ignore = true)
     @Mapping(target = "effectifReformes", ignore = true)
+    @Mapping(target = "totalDeclaresMorts", ignore = true)
+    @Mapping(target = "totalDeclaresVendus", ignore = true)
+    @Mapping(target = "totalDeclaresReformes", ignore = true)
+    @Mapping(target = "revenuTotalVentes", ignore = true)
+    @Mapping(target = "dateDerniereDeclaration", ignore = true)
     @Mapping(target = "dateSortieReelle", ignore = true)
     @Mapping(target = "poidsTotalSortie", ignore = true)
     @Mapping(target = "poidsMoyenActuelKg", ignore = true)
@@ -45,6 +50,18 @@ public interface BandeMapper {
     default void setDefaultStatut(com.reseau_partage.animaux.dto.bande.BandeRequest request, @org.mapstruct.MappingTarget Bande bande) {
         if (bande.getStatut() == null && (request == null || request.statut() == null)) {
             bande.setStatut(StatutBande.EN_COURS);
+        }
+        if (bande.getTotalDeclaresMorts() == null) {
+            bande.setTotalDeclaresMorts(0);
+        }
+        if (bande.getTotalDeclaresVendus() == null) {
+            bande.setTotalDeclaresVendus(0);
+        }
+        if (bande.getTotalDeclaresReformes() == null) {
+            bande.setTotalDeclaresReformes(0);
+        }
+        if (bande.getRevenuTotalVentes() == null) {
+            bande.setRevenuTotalVentes(java.math.BigDecimal.ZERO);
         }
     }
 }
