@@ -26,6 +26,7 @@ public record AnimalResponse(
         BigDecimal poidsActuelKg,
         BigDecimal gainTotalKg,
         LocalDate dateDernierePesee,
+        LocalDate dateDerniereDeclaration,
         ModeSuivi modeSuivi,
         Long bandeId,
         String bandeNom,

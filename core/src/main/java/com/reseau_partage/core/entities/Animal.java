@@ -118,6 +118,9 @@ public class Animal {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "date_derniere_declaration")
+    private LocalDate dateDerniereDeclaration;
+
     @Column(name = "date_creation", updatable = false)
     private LocalDateTime dateCreation;
 
@@ -193,6 +196,8 @@ public class Animal {
     public void setCauseMort(String causeMort) { this.causeMort = causeMort; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    public LocalDate getDateDerniereDeclaration() { return dateDerniereDeclaration; }
+    public void setDateDerniereDeclaration(LocalDate dateDerniereDeclaration) { this.dateDerniereDeclaration = dateDerniereDeclaration; }
     public LocalDateTime getDateCreation() { return dateCreation; }
     public LocalDateTime getDateModification() { return dateModification; }
     public void setDateModification(LocalDateTime dateModification) { this.dateModification = dateModification; }

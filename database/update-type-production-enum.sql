@@ -16,7 +16,8 @@ CHECK (type_production IN (
     'LAIT',
     'VIANDE',
     'AQUACULTURE',
-    'MIXTE'
+    'MIXTE',
+    'NAISSANCE'
 ));
 
 -- Mettre à jour aussi la contrainte pour l'enum Provenance si nécessaire

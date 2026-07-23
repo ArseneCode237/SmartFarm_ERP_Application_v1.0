@@ -28,6 +28,7 @@ public record AnimalRequest(
         Provenance provenance,
         String fournisseurNom,
         String numeroLotAchat,
+        LocalDate dateDerniereDeclaration,
         String notes
 ) {
 }

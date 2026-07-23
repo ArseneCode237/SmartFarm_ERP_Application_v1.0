@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "SmartFarm ERP - Module Animaux (Tests)",
-    "description": "Collection Postman corrigée pour le module animaux (élevage porcin).\n\nCorrections vs version précédente :\n- provenance corrigée (ACHAT_EXTERNE / NAISSANCE_INTERNE)\n- retrait du PUT /porcs/{id} inexistant\n- ajout du cycle Saillie (créer/confirmer/avortement/alertes)\n- ajout des tests d'isolation par ferme (?fermeId)\n- ajout du module Déclarations Bandes (mortalité, vente, réforme avec stats et historique\n\nBase URL : utilisez http://localhost:8083 (service direct) pour éviter les timeouts gateway,\nou http://localhost:8080 (gateway) si Eureka est démarré.\n\nAstuce : lancez les dossiers dans l'ordre : 0_Init -> 1_Saillies -> 2_MisesBas -> 3_IsolationFerme -> 6_Declarations_Bandes.",
+    "description": "Collection Postman corrigée pour le module animaux (élevage porcin).\n\nCorrections vs version précédente :\n- provenance corrigée (ACHAT_EXTERNE / NAISSANCE_INTERNE)\n- retrait du PUT /porcs/{id} inexistant\n- ajout du cycle Saillie (créer/confirmer/avortement/alertes)\n- ajout des tests d'isolation par ferme (?fermeId)\n- ajout du module Déclarations Bandes (mortalité, vente, réforme avec stats et historique\n- ajout du module Déclarations Animaux (mortalité, vente, réforme avec historique\n\nBase URL : utilisez http://localhost:8083 (service direct) pour éviter les timeouts gateway,\nou http://localhost:8080 (gateway) si Eureka est démarré.\n\nAstuce : lancez les dossiers dans l'ordre : 0_Init -> 1_Saillies -> 2_MisesBas -> 3_IsolationFerme -> 6_Declarations_Bandes -> 7_Declarations_Animaux.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -15,6 +15,7 @@
     { "key": "animalId", "value": "1" },
     { "key": "bandeId", "value": "1" },
     { "key": "declarationId", "value": "1" },
+    { "key": "declarationAnimalId", "value": "1" },
     { "key": "structureId", "value": "1" },
     { "key": "siteId", "value": "1" },
     { "key": "fermeIdA", "value": "1" },
@@ -408,6 +409,80 @@
             "method": "GET",
             "header": [ { "key": "Authorization", "value": "Bearer {{authToken}}" } ],
             "url": { "raw": "{{baseUrl}}/api/animaux/declarations/{{declarationId}}/historique", "host": ["{{baseUrl}}"], "path": ["api", "animaux", "declarations", "{{declarationId}}", "historique"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7_Declarations_Animaux",
+      "item": [
+        {
+          "name": "Déclarer une mortalité sur un animal",
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 201', () => pm.response.to.have.status(201));", "const d = pm.response.json().data; if (d && d.id) pm.environment.set('declarationAnimalId', d.id);"] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{authToken}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"animalId\": {{porcinId}},\n  \"type\": \"MORT\",\n  \"motif\": \"MALADIE\",\n  \"dateDeclaration\": \"2026-07-23\",\n  \"poidsKg\": 25.5,\n  \"observations\": \"Porc malade depuis 3 jours\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/animaux/declarations/animaux", "host": ["{{baseUrl}}"], "path": ["api", "animaux", "declarations", "animaux"] }
+          }
+        },
+        {
+          "name": "Déclarer une vente sur un animal",
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 201', () => pm.response.to.have.status(201));"] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{authToken}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"animalId\": {{porcinId}},\n  \"type\": \"VENTE\",\n  \"motif\": \"GROSSISTE\",\n  \"dateDeclaration\": \"2026-07-23\",\n  \"poidsKg\": 30.0,\n  \"prixUnitaire\": 4.5,\n  \"nomAcheteur\": \"Elevage Duval\",\n  \"telephoneAcheteur\": \"0612345678\",\n  \"localiteAcheteur\": \"Rennes\",\n  \"observations\": \"Vente porc engraissement\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/animaux/declarations/animaux", "host": ["{{baseUrl}}"], "path": ["api", "animaux", "declarations", "animaux"] }
+          }
+        },
+        {
+          "name": "Déclarer une réforme sur un animal",
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 201', () => pm.response.to.have.status(201));"] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{authToken}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"animalId\": {{porcinId}},\n  \"type\": \"REFORME\",\n  \"motif\": \"PRODUCTIVITE\",\n  \"dateDeclaration\": \"2026-07-23\",\n  \"observations\": \"Trop faible croissance\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/animaux/declarations/animaux", "host": ["{{baseUrl}}"], "path": ["api", "animaux", "declarations", "animaux"] }
+          }
+        },
+        {
+          "name": "Lister toutes les déclarations d'animaux",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{authToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/animaux/declarations/animaux?fermeId={{fermeIdA}}&type=MORT&dateDebut=2026-07-01&dateFin=2026-07-31&page=0&size=20&sortBy=dateDeclaration&sortDir=desc", "host": ["{{baseUrl}}"], "path": ["api", "animaux", "declarations", "animaux"], "query": [ { "key": "fermeId", "value": "{{fermeIdA}}" }, { "key": "type", "value": "MORT" }, { "key": "dateDebut", "value": "2026-07-01" }, { "key": "dateFin", "value": "2026-07-31" }, { "key": "page", "value": "0" }, { "key": "size", "value": "20" }, { "key": "sortBy", "value": "dateDeclaration" }, { "key": "sortDir", "value": "desc" } ] }
+          }
+        },
+        {
+          "name": "Lister les déclarations d'un animal",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{authToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/animaux/declarations/animaux/{{porcinId}}?page=0&size=20&sortBy=dateDeclaration&sortDir=desc", "host": ["{{baseUrl}}"], "path": ["api", "animaux", "declarations", "animaux", "{{porcinId}}"], "query": [ { "key": "page", "value": "0" }, { "key": "size", "value": "20" }, { "key": "sortBy", "value": "dateDeclaration" }, { "key": "sortDir", "value": "desc" } ] }
+          }
+        },
+        {
+          "name": "Annuler une déclaration animal",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Authorization", "value": "Bearer {{authToken}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "" },
+            "url": { "raw": "{{baseUrl}}/api/animaux/declarations/animaux/{{declarationAnimalId}}/annuler?motif=Erreur%20saisie", "host": ["{{baseUrl}}"], "path": ["api", "animaux", "declarations", "animaux", "{{declarationAnimalId}}", "annuler"], "query": [ { "key": "motif", "value": "Erreur saisie" } ] }
+          }
+        },
+        {
+          "name": "Récupérer l'historique d'une déclaration animal",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{authToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/animaux/declarations/animaux/{{declarationAnimalId}}/historique", "host": ["{{baseUrl}}"], "path": ["api", "animaux", "declarations", "animaux", "{{declarationAnimalId}}", "historique"] }
           }
         }
       ]
