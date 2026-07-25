@@ -1,15 +1,19 @@
 package com.reseau_partage.organisation.service;
 
+import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.reseau_partage.core.entities.Animal;
 import com.reseau_partage.core.entities.Batiment;
 import com.reseau_partage.core.entities.Enclos;
 import com.reseau_partage.core.entities.Entrepot;
@@ -23,9 +27,11 @@ import com.reseau_partage.core.entities.StatutFerme;
 import com.reseau_partage.core.entities.StatutSite;
 import com.reseau_partage.core.entities.StatutStructure;
 import com.reseau_partage.core.entities.Structure;
+import com.reseau_partage.core.repository.AnimalRepository;
 import com.reseau_partage.core.repository.FermeRepository;
 import com.reseau_partage.core.repository.SiteRepository;
 import com.reseau_partage.core.repository.StructureRepository;
+import com.reseau_partage.core.repository.UtilisateurRepository;
 import com.reseau_partage.organisation.dto.FermeRequest;
 import com.reseau_partage.organisation.dto.SiteRequest;
 import com.reseau_partage.organisation.dto.StructureRequest;
@@ -33,35 +39,50 @@ import com.reseau_partage.organisation.exception.ConflictException;
 import com.reseau_partage.organisation.exception.ResourceNotFoundException;
 import com.reseau_partage.organisation.exception.StatutTransitionException;
 
-import java.text.Normalizer;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 @Service
 @Transactional
 public class OrganisationService {
   private final FermeRepository fermes;
   private final SiteRepository sites;
   private final StructureRepository structures;
+  private final UtilisateurRepository utilisateurs;
+  private final AnimalRepository animalRepository;
 
-  public OrganisationService(FermeRepository fermes, SiteRepository sites, StructureRepository structures) {
+  public OrganisationService(FermeRepository fermes, SiteRepository sites,
+                             StructureRepository structures, UtilisateurRepository utilisateurs,
+                             AnimalRepository animalRepository) {
     this.fermes = fermes;
     this.sites = sites;
     this.structures = structures;
+    this.utilisateurs = utilisateurs;
+    this.animalRepository = animalRepository;
   }
 
-  public Map<String, Object> createFerme(FermeRequest r) {
+  public Map<String, Object> createFerme(FermeRequest r, String email) {
     if (fermes.existsByNomAndPays(r.nom(), r.pays()))
       throw new ConflictException("Une ferme portant ce nom existe deja dans ce pays.");
+    Long userId = utilisateurs.findByEmail(email)
+        .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", 0L))
+        .getId();
     Ferme f = new Ferme();
     apply(f, r);
     f.setStatut(StatutFerme.ACTIF);
+    f.setProprietaireId(userId);
     return ferme(fermes.save(f));
   }
 
   @Transactional(readOnly = true)
   public List<Map<String, Object>> listFermes() {
     return fermes.findByStatutNot(StatutFerme.ARCHIVEE).stream().map(this::ferme).toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<Map<String, Object>> listMesFermes(String email) {
+    Long userId = utilisateurs.findByEmail(email)
+        .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", 0L))
+        .getId();
+    return fermes.findByProprietaireIdAndStatutNot(userId, StatutFerme.ARCHIVEE)
+        .stream().map(this::ferme).toList();
   }
 
   @Transactional(readOnly = true)
@@ -218,14 +239,21 @@ public class OrganisationService {
                      : s instanceof Poulailler p  ? p.getCapaciteMaxAnimaux()
                      : s instanceof Porcherie pc  ? pc.getCapaciteMaxAnimaux()
                      : null;
+    long animauxPresents = animalRepository.countByStructureId(id);
     Map<String, Object> out = new LinkedHashMap<>();
     out.put("structureId", id);
     out.put("typeStructure", type(s));
     out.put("capaciteMaxAnimaux", capacity);
-    out.put("animauxPresents", 0);
-    out.put("tauxOccupation", capacity == null ? null : 0);
-    out.put("niveauAlerte", null);
+    out.put("animauxPresents", animauxPresents);
+    out.put("tauxOccupation", capacity == null ? null : (capacity == 0 ? 0 : (double) animauxPresents * 100 / capacity));
+    out.put("niveauAlerte", capacity != null && animauxPresents >= capacity ? "ALERTE" : null);
     return out;
+  }
+
+  @Transactional(readOnly = true)
+  public List<Map<String, Object>> listAnimalsForStructure(Long id) {
+    getStructureEntity(id);
+    return animalRepository.findByStructureId(id).stream().map(this::animalSummary).toList();
   }
 
   private Ferme getFermeEntity(Long id) {
@@ -373,9 +401,24 @@ public class OrganisationService {
         || (f == StatutStructure.PRET && t == StatutStructure.ACTIF);
   }
 
+  private Map<String, Object> animalSummary(Animal animal) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("id", animal.getId());
+    m.put("codeUnique", animal.getCodeUnique());
+    m.put("nom", animal.getNom());
+    m.put("espece", animal.getEspece());
+    m.put("statut", animal.getStatut());
+    m.put("structureId", animal.getStructure() != null ? animal.getStructure().getId() : null);
+    m.put("structureNom", animal.getStructure() != null ? animal.getStructure().getNom() : null);
+    m.put("bandeId", animal.getBande() != null ? animal.getBande().getId() : null);
+    m.put("bandeNom", animal.getBande() != null ? animal.getBande().getNom() : null);
+    return m;
+  }
+
   private Map<String, Object> ferme(Ferme f) {
     Map<String, Object> m = new LinkedHashMap<>();
     m.put("id", f.getId());
+    m.put("proprietaireId", f.getProprietaireId());
     m.put("nom", f.getNom());
     m.put("pays", f.getPays());
     m.put("devise", f.getDevise());
@@ -415,6 +458,7 @@ public class OrganisationService {
 
   private Map<String, Object> structure(Structure s) {
     Map<String, Object> m = new LinkedHashMap<>();
+    // ── Champs communs ────────────────────────────────────────────────────────
     m.put("id", s.getId());
     m.put("siteId", s.getSite().getId());
     m.put("siteNom", s.getSite().getNom());
@@ -427,6 +471,53 @@ public class OrganisationService {
     m.put("statut", s.getStatut());
     m.put("dateCreation", s.getDateCreation());
     m.put("dateDebutVide", s.getDateDebutVide());
+    m.put("nombreAnimaux", animalRepository.countByStructureId(s.getId()));
+    m.put("animaux", animalRepository.findByStructureId(s.getId()).stream().map(this::animalSummary).toList());
+    // ── Attributs spécifiques selon le type ──────────────────────────────────
+    if (s instanceof Batiment x) {
+      m.put("capaciteMaxAnimaux", x.getCapaciteMaxAnimaux());
+      m.put("typeVentilation", x.getTypeVentilation());
+      m.put("dureeVideSanitaireJours", x.getDureeVideSanitaireJours());
+      m.put("nombreRangees", x.getNombreRangees());
+      m.put("systemeAbreuvement", x.getSystemeAbreuvement());
+    } else if (s instanceof Enclos x) {
+      m.put("capaciteMaxAnimaux", x.getCapaciteMaxAnimaux());
+      m.put("typeCloture", x.getTypeCloture());
+      m.put("accesEau", x.getAccesEau());
+      m.put("especesCompatibles", x.getEspecesCompatibles());
+    } else if (s instanceof Etang x) {
+      m.put("volumeM3", x.getVolumeM3());
+      m.put("profondeurM", x.getProfondeurM());
+      m.put("systemeAeration", x.getSystemeAeration());
+      m.put("temperatureCibleCelsius", x.getTemperatureCibleCelsius());
+      m.put("phCible", x.getPhCible());
+    } else if (s instanceof Entrepot x) {
+      m.put("capaciteTonnes", x.getCapaciteTonnes());
+      m.put("temperatureControlee", x.getTemperatureControlee());
+      m.put("temperatureMinCelsius", x.getTemperatureMinCelsius());
+      m.put("temperatureMaxCelsius", x.getTemperatureMaxCelsius());
+    } else if (s instanceof Poulailler x) {
+      m.put("capaciteMaxAnimaux", x.getCapaciteMaxAnimaux());
+      m.put("typeVentilation", x.getTypeVentilation());
+      m.put("dureeVideSanitaireJours", x.getDureeVideSanitaireJours());
+      m.put("nombreRangees", x.getNombreRangees());
+      m.put("systemeAbreuvement", x.getSystemeAbreuvement());
+      m.put("typeProduction", x.getTypeProduction());
+      m.put("systemeChauffage", x.getSystemeChauffage());
+    } else if (s instanceof Porcherie x) {
+      m.put("capaciteMaxAnimaux", x.getCapaciteMaxAnimaux());
+      m.put("typeSol", x.getTypeSol());
+      m.put("dureeVideSanitaireJours", x.getDureeVideSanitaireJours());
+      m.put("systemeAbreuvement", x.getSystemeAbreuvement());
+      m.put("systemeEvacuation", x.getSystemeEvacuation());
+      m.put("nombreCases", x.getNombreCases());
+      m.put("typeVentilation", x.getTypeVentilation());
+    } else if (s instanceof Parcelle x) {
+      m.put("typeSol", x.getTypeSol());
+      m.put("cultureActuelle", x.getCultureActuelle());
+      m.put("systemeIrrigation", x.getSystemeIrrigation());
+      m.put("coordonneesPolygone", x.getCoordonneesPolygone());
+    }
     return m;
   }
 }
