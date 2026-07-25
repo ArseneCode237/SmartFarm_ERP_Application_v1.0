@@ -221,4 +221,32 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolationException(org.springframework.dao.DataIntegrityViolationException ex, HttpServletRequest request) {
+        String rootMessage = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
+        String message = "Violation d'intégrité des données : ";
+        
+        if (rootMessage != null) {
+            if (rootMessage.contains("code_unique")) {
+                message += "le code unique est déjà utilisé par un autre animal.";
+            } else if (rootMessage.contains("code_rfid")) {
+                message += "le code RFID est déjà utilisé par un autre animal.";
+            } else if (rootMessage.contains("code_boucle")) {
+                message += "le code boucle est déjà utilisé par un autre animal.";
+            } else {
+                    message += rootMessage;
+                }
+            } else {
+                message += "une erreur inattendue s'est produite.";
+            }
+
+        Map<String, Object> errorResponse = buildErrorResponse(
+                409,
+                "Conflict",
+                message,
+                request.getRequestURI()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
 }

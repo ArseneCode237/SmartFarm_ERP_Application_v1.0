@@ -80,11 +80,22 @@ public class AnimalService {
                 throw new IncompatibiliteEspeceException("L'animal doit avoir la meme espece que la bande.");
             }
         }
+        if (request.provenance() == com.reseau_partage.core.entities.Provenance.NAISSANCE_INTERNE) {
+            if (request.mereId() == null) {
+                throw new IllegalArgumentException("mereId est obligatoire pour une naissance interne.");
+            }
+        }
         if (request.mereId() != null) {
             Animal mere = animalRepository.findById(request.mereId())
                     .orElseThrow(() -> new ResourceNotFoundException("Animal", request.mereId()));
             if (mere.getEspece() != request.espece()) {
                 throw new IncompatibiliteEspeceException("La mere doit avoir la meme espece.");
+            }
+            if (mere.getSexe() != com.reseau_partage.core.entities.Sexe.FEMELLE) {
+                throw new IllegalArgumentException("La mere doit etre une femelle.");
+            }
+            if (mere.getStatut() != StatutAnimal.ACTIF) {
+                throw new IllegalArgumentException("La mere doit etre un animal actif.");
             }
         }
         if (request.pereId() != null) {
@@ -92,6 +103,12 @@ public class AnimalService {
                     .orElseThrow(() -> new ResourceNotFoundException("Animal", request.pereId()));
             if (pere.getEspece() != request.espece()) {
                 throw new IncompatibiliteEspeceException("Le pere doit avoir la meme espece.");
+            }
+            if (pere.getSexe() != com.reseau_partage.core.entities.Sexe.MALE) {
+                throw new IllegalArgumentException("Le pere doit etre un male.");
+            }
+            if (pere.getStatut() != StatutAnimal.ACTIF) {
+                throw new IllegalArgumentException("Le pere doit etre un animal actif.");
             }
         }
         Animal animal = animalMapper.toEntity(request);
@@ -301,6 +318,24 @@ public class AnimalService {
 
     public AnimalResponse toResponsePublic(Animal animal) {
         return animalMapper.toResponse(animal);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AnimalResponse> listAnimalsForParentSelection(
+            com.reseau_partage.core.entities.Sexe sexe,
+            Long fermeId,
+            Long structureId) {
+        List<Animal> animals;
+        if (structureId != null) {
+            animals = animalRepository.findBySexeAndStatutAndStructureId(
+                    sexe, StatutAnimal.ACTIF, structureId);
+        } else if (fermeId != null) {
+            animals = animalRepository.findBySexeAndStatutAndFermeId(
+                    sexe, StatutAnimal.ACTIF, fermeId);
+        } else {
+            animals = animalRepository.findBySexeAndStatut(sexe, StatutAnimal.ACTIF);
+        }
+        return animals.stream().map(this::toResponse).toList();
     }
 
     private AnimalResponse toResponse(Animal animal) {

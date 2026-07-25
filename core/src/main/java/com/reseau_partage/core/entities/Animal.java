@@ -32,10 +32,10 @@ public class Animal {
     @Column(name = "nom", length = 100)
     private String nom;
 
-    @Column(name = "code_rfid", length = 50)
+    @Column(name = "code_rfid", unique = true, length = 50)
     private String codeRfid;
 
-    @Column(name = "code_boucle", length = 30)
+    @Column(name = "code_boucle", unique = true, length = 30)
     private String codeBoucle;
 
     @Enumerated(EnumType.STRING)
