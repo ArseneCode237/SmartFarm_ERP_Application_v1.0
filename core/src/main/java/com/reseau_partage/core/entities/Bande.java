@@ -144,6 +144,42 @@ public class Bande {
     @Column(name = "date_modification")
     private LocalDateTime dateModification;
 
+    // ── Généalogie (porcin, bovin) ─────────────────────────────────────────
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "mere_id")
+    private Animal mere;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pere_id")
+    private Animal pere;
+
+    // ── Aquaculture ────────────────────────────────────────────────────────
+    @Column(name = "densite_poissons", precision = 8, scale = 2)
+    private BigDecimal densitePoissons;
+
+    @Column(name = "taille_moyenne", precision = 6, scale = 2)
+    private BigDecimal tailleMoyenne;
+
+    @Column(name = "alimentation", length = 50)
+    @Enumerated(EnumType.STRING)
+    private AlimentationPoisson alimentation;
+
+    @Column(name = "systeme_elevage", length = 50)
+    @Enumerated(EnumType.STRING)
+    private SystemeElevagePoisson systemeElevage;
+
+    @Column(name = "temperature_eau", precision = 4, scale = 1)
+    private BigDecimal temperatureEau;
+
+    @Column(name = "ph_eau", precision = 4, scale = 2)
+    private BigDecimal phEau;
+
+    @Column(name = "oxygene_dissous", precision = 5, scale = 2)
+    private BigDecimal oxygeneDissous;
+
+    @Column(name = "race_poisson", length = 100)
+    private String racePoisson;
+
     @PrePersist
     protected void onCreate() {
         this.dateCreation = LocalDateTime.now();
@@ -232,4 +268,36 @@ public class Bande {
     public void setRevenuTotalVentes(BigDecimal revenuTotalVentes) { this.revenuTotalVentes = revenuTotalVentes; }
     public LocalDate getDateDerniereDeclaration() { return dateDerniereDeclaration; }
     public void setDateDerniereDeclaration(LocalDate dateDerniereDeclaration) { this.dateDerniereDeclaration = dateDerniereDeclaration; }
+
+    // ── Généalogie ────────────────────────────────────────────────────────
+    public Animal getMere() { return mere; }
+    public void setMere(Animal mere) { this.mere = mere; }
+
+    public Animal getPere() { return pere; }
+    public void setPere(Animal pere) { this.pere = pere; }
+
+    // ── Aquaculture ───────────────────────────────────────────────────────
+    public BigDecimal getDensitePoissons() { return densitePoissons; }
+    public void setDensitePoissons(BigDecimal densitePoissons) { this.densitePoissons = densitePoissons; }
+
+    public BigDecimal getTailleMoyenne() { return tailleMoyenne; }
+    public void setTailleMoyenne(BigDecimal tailleMoyenne) { this.tailleMoyenne = tailleMoyenne; }
+
+    public AlimentationPoisson getAlimentation() { return alimentation; }
+    public void setAlimentation(AlimentationPoisson alimentation) { this.alimentation = alimentation; }
+
+    public SystemeElevagePoisson getSystemeElevage() { return systemeElevage; }
+    public void setSystemeElevage(SystemeElevagePoisson systemeElevage) { this.systemeElevage = systemeElevage; }
+
+    public BigDecimal getTemperatureEau() { return temperatureEau; }
+    public void setTemperatureEau(BigDecimal temperatureEau) { this.temperatureEau = temperatureEau; }
+
+    public BigDecimal getPhEau() { return phEau; }
+    public void setPhEau(BigDecimal phEau) { this.phEau = phEau; }
+
+    public BigDecimal getOxygeneDissous() { return oxygeneDissous; }
+    public void setOxygeneDissous(BigDecimal oxygeneDissous) { this.oxygeneDissous = oxygeneDissous; }
+
+    public String getRacePoisson() { return racePoisson; }
+    public void setRacePoisson(String racePoisson) { this.racePoisson = racePoisson; }
 }

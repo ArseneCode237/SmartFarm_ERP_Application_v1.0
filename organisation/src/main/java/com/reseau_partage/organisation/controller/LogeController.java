@@ -1,15 +1,24 @@
 package com.reseau_partage.organisation.controller;
 
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.reseau_partage.organisation.dto.LogeRequest;
 import com.reseau_partage.organisation.dto.LogeResponse;
 import com.reseau_partage.organisation.service.LogeService;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/organisation/loges")
@@ -121,5 +130,16 @@ public class LogeController {
             throw new IllegalArgumentException("Le champ 'animauxIds' est obligatoire.");
         }
         return ResponseEntity.ok(service.retirerAnimaux(id, animauxIds));
+    }
+
+    /**
+     * GET /api/organisation/loges/{id}/duplicate
+     * Récupère les données d'une loge existante pour pré-remplir un nouveau formulaire.
+     * Le code est préfixé avec "COP-" et le nom avec "Copie - " pour indiquer la duplication.
+     * La bande et les animaux ne sont PAS renvoyés (ils doivent être réaffectés).
+     */
+    @GetMapping("/{id}/duplicate")
+    public ResponseEntity<LogeRequest> duplicate(@PathVariable Long id) {
+        return ResponseEntity.ok(service.duplicate(id));
     }
 }

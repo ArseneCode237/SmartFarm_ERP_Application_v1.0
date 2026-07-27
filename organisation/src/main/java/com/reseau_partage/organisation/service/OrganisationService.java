@@ -205,6 +205,95 @@ public class OrganisationService {
     return structure(getStructureEntity(id));
   }
 
+  @Transactional(readOnly = true)
+  public StructureRequest duplicateStructure(Long id) {
+    Structure s = getStructureEntity(id);
+    String nomCopie = "Copie - " + s.getNom();
+    String t = type(s);
+
+    Integer capaciteMaxAnimaux = null;
+    String typeVentilation = null;
+    Integer dureeVideSanitaireJours = null;
+    Integer nombreRangees = null;
+    String systemeAbreuvement = null;
+    String typeCloture = null;
+    Boolean accesEau = null;
+    String especesCompatibles = null;
+    java.math.BigDecimal volumeM3 = null;
+    java.math.BigDecimal profondeurM = null;
+    com.reseau_partage.core.entities.SystemeAeration systemeAeration = null;
+    java.math.BigDecimal temperatureCibleCelsius = null;
+    java.math.BigDecimal phCible = null;
+    java.math.BigDecimal capaciteTonnes = null;
+    Boolean temperatureControlee = null;
+    java.math.BigDecimal temperatureMinCelsius = null;
+    java.math.BigDecimal temperatureMaxCelsius = null;
+    String typeSol = null;
+    String cultureActuelle = null;
+    String systemeIrrigation = null;
+    String coordonneesPolygone = null;
+    String typeProduction = null;
+    String systemeChauffage = null;
+    String systemeEvacuation = null;
+    Integer nombreCases = null;
+
+    if (s instanceof Batiment x) {
+      capaciteMaxAnimaux = x.getCapaciteMaxAnimaux();
+      typeVentilation = x.getTypeVentilation();
+      dureeVideSanitaireJours = x.getDureeVideSanitaireJours();
+      nombreRangees = x.getNombreRangees();
+      systemeAbreuvement = x.getSystemeAbreuvement();
+    } else if (s instanceof Enclos x) {
+      capaciteMaxAnimaux = x.getCapaciteMaxAnimaux();
+      typeCloture = x.getTypeCloture();
+      accesEau = x.getAccesEau();
+      especesCompatibles = x.getEspecesCompatibles();
+    } else if (s instanceof Etang x) {
+      volumeM3 = x.getVolumeM3();
+      profondeurM = x.getProfondeurM();
+      systemeAeration = x.getSystemeAeration();
+      temperatureCibleCelsius = x.getTemperatureCibleCelsius();
+      phCible = x.getPhCible();
+    } else if (s instanceof Entrepot x) {
+      capaciteTonnes = x.getCapaciteTonnes();
+      temperatureControlee = x.getTemperatureControlee();
+      temperatureMinCelsius = x.getTemperatureMinCelsius();
+      temperatureMaxCelsius = x.getTemperatureMaxCelsius();
+    } else if (s instanceof Poulailler x) {
+      capaciteMaxAnimaux = x.getCapaciteMaxAnimaux();
+      typeVentilation = x.getTypeVentilation();
+      dureeVideSanitaireJours = x.getDureeVideSanitaireJours();
+      nombreRangees = x.getNombreRangees();
+      systemeAbreuvement = x.getSystemeAbreuvement();
+      typeProduction = x.getTypeProduction();
+      systemeChauffage = x.getSystemeChauffage();
+    } else if (s instanceof Porcherie x) {
+      capaciteMaxAnimaux = x.getCapaciteMaxAnimaux();
+      typeVentilation = x.getTypeVentilation();
+      dureeVideSanitaireJours = x.getDureeVideSanitaireJours();
+      systemeAbreuvement = x.getSystemeAbreuvement();
+      systemeEvacuation = x.getSystemeEvacuation();
+      nombreCases = x.getNombreCases();
+    } else if (s instanceof Parcelle x) {
+      typeSol = x.getTypeSol();
+      cultureActuelle = x.getCultureActuelle();
+      systemeIrrigation = x.getSystemeIrrigation();
+      coordonneesPolygone = x.getCoordonneesPolygone();
+    }
+
+    return new StructureRequest(
+      s.getSite().getId(), nomCopie, t, s.getDescription(), s.getSuperficieM2(),
+      s.getLatitude(), s.getLongitude(),
+      capaciteMaxAnimaux, typeVentilation, dureeVideSanitaireJours, nombreRangees, systemeAbreuvement,
+      typeCloture, accesEau, especesCompatibles,
+      volumeM3, profondeurM, systemeAeration, temperatureCibleCelsius, phCible,
+      capaciteTonnes, temperatureControlee, temperatureMinCelsius, temperatureMaxCelsius,
+      typeSol, cultureActuelle, systemeIrrigation, coordonneesPolygone,
+      typeProduction, systemeChauffage,
+      systemeEvacuation, nombreCases
+    );
+  }
+
   public Map<String, Object> updateStructure(Long id, StructureRequest r) {
     Structure s = getStructureEntity(id);
     if (!type(s).equals(normalizeType(r.typeStructure())))

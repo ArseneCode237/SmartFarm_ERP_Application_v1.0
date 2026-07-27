@@ -1,6 +1,5 @@
 package com.reseau_partage.organisation.service;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,6 +99,30 @@ public class LogeService {
         // Détacher la bande
         loge.setBande(null);
         logeRepository.delete(loge);
+    }
+
+    /**
+     * Récupère les données d'une loge existante pour pré-remplir un nouveau formulaire.
+     * Le code est préfixé avec "COP-" (doit être modifié par l'utilisateur pour rester unique).
+     * Le nom est préfixé avec "Copie - ".
+     * La bande et les animaux affectés ne sont PAS renvoyés pour éviter les conflits.
+     */
+    @Transactional(readOnly = true)
+    public LogeRequest duplicate(Long logeId) {
+        Loge loge = getLogeEntity(logeId);
+        String nomCopie = "Copie - " + loge.getNom();
+        String codeCopie = "COP-" + loge.getCode();
+
+        return new LogeRequest(
+                codeCopie,
+                nomCopie,
+                loge.getDescription(),
+                loge.getCapaciteMaxAnimaux(),
+                loge.getSuperficieM2(),
+                loge.getBatiment().getId(),
+                null, // bande non incluse : doit être réaffectée
+                null  // animaux non inclus : doivent être réaffectés
+        );
     }
 
     /**

@@ -1,15 +1,14 @@
 package com.reseau_partage.animaux.mapper;
 
 import org.mapstruct.BeanMapping;
+import org.mapstruct.BeforeMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
 import com.reseau_partage.animaux.dto.bande.BandeResponse;
 import com.reseau_partage.core.entities.Bande;
-
 import com.reseau_partage.core.entities.StatutBande;
-import org.mapstruct.BeforeMapping;
 
 @Mapper(componentModel = "spring")
 public interface BandeMapper {
@@ -20,12 +19,27 @@ public interface BandeMapper {
     @Mapping(target = "structureNom", source = "structure.nom")
     @Mapping(target = "tauxMortalitePct", ignore = true)
     @Mapping(target = "ageMoyenJours", ignore = true)
+    @Mapping(target = "mereId", source = "mere.id")
+    @Mapping(target = "mereNom", source = "mere.race")
+    @Mapping(target = "mereNumeroIdentification", source = "mere.codeUnique")
+    @Mapping(target = "pereId", source = "pere.id")
+    @Mapping(target = "pereNom", source = "pere.race")
+    @Mapping(target = "pereNumeroIdentification", source = "pere.codeUnique")
+    @Mapping(target = "tauxSurviePct", ignore = true)
+    @Mapping(target = "poidsTotalEstimeKg", ignore = true)
+    @Mapping(target = "biomasseEstimeeKg", ignore = true)
+    @Mapping(target = "consommationAlimentaireTotaleKg", ignore = true)
+    @Mapping(target = "tauxConversionAlimentaire", ignore = true)
+    @Mapping(target = "gainMoyenQuotidien", ignore = true)
+    @Mapping(target = "densiteOptimalePct", ignore = true)
     BandeResponse toResponse(Bande entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "codeBande", ignore = true)
     @Mapping(target = "site", ignore = true)
     @Mapping(target = "structure", ignore = true)
+    @Mapping(target = "mere", ignore = true)
+    @Mapping(target = "pere", ignore = true)
     @Mapping(target = "effectifActuel", expression = "java(request.effectifInitial())")
     @Mapping(target = "effectifMorts", ignore = true)
     @Mapping(target = "effectifVendus", ignore = true)

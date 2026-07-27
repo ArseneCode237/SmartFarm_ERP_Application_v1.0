@@ -1,8 +1,26 @@
 package com.reseau_partage.animaux.controller;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.reseau_partage.animaux.dto.animal.AnimalRequest;
 import com.reseau_partage.animaux.dto.animal.AnimalResponse;
-import com.reseau_partage.animaux.exception.ResourceNotFoundException;
 import com.reseau_partage.animaux.service.AnimalService;
 import com.reseau_partage.animaux.service.AuditService;
 import com.reseau_partage.animaux.service.ExportService;
@@ -11,18 +29,8 @@ import com.reseau_partage.core.entities.ModeSuivi;
 import com.reseau_partage.core.entities.Sexe;
 import com.reseau_partage.core.entities.StatutAnimal;
 import com.reseau_partage.core.entities.TypeMouvement;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/animaux/animaux")
@@ -189,5 +197,16 @@ public class AnimalController {
         List<?> resultats = exportService.rechercheAvancee(espece, statut, modeSuivi, structureId, siteId,
                 fermeId, bandeId, sexe, ageMinJours, ageMaxJours, poidsMinKg, poidsMaxKg, dateEntreeDebut, dateEntreeFin);
         return ResponseEntity.ok(Map.of("content", resultats, "totalElements", resultats.size()));
+    }
+
+    /**
+     * GET /api/animaux/animaux/{id}/duplicate
+     * Récupère les données d'un animal existant pour pré-remplir un nouveau formulaire.
+     * Les codes uniques (RFID, boucle) ne sont PAS renvoyés (doivent rester uniques).
+     * Les dates individuelles (naissance, entrée) sont remises à null.
+     */
+    @GetMapping("/{id}/duplicate")
+    public ResponseEntity<AnimalRequest> duplicate(@PathVariable Long id) {
+        return ResponseEntity.ok(service.duplicate(id));
     }
 }

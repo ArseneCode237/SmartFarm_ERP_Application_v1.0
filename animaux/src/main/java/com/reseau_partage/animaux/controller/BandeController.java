@@ -114,4 +114,15 @@ public class BandeController {
         }
         return ResponseEntity.ok(Map.of("content", service.echeances(fermeId, jours)));
     }
+
+    /**
+     * GET /api/animaux/bandes/{id}/duplicate
+     * Récupère les données d'une bande existante pour pré-remplir un nouveau formulaire.
+     * Le nom est préfixé avec "Copie - ".
+     * Les statistiques d'usage (effectifs, dates, revenus) sont remises à zéro.
+     */
+    @GetMapping("/{id}/duplicate")
+    public ResponseEntity<BandeRequest> duplicate(@PathVariable Long id) {
+        return ResponseEntity.ok(service.duplicate(id));
+    }
 }

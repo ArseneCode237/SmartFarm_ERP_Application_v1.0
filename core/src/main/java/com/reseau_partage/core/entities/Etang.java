@@ -10,8 +10,9 @@ public class Etang extends Structure {
     private BigDecimal volumeM3;
     @Column(precision = 5, scale = 2)
     private BigDecimal profondeurM;
-    @Column(length = 50)
-    private String systemeAeration;
+    @Column(name = "systeme_aeration", length = 50)
+    @Enumerated(EnumType.STRING)
+    private SystemeAeration systemeAeration;
     @Column(precision = 4, scale = 1)
     private BigDecimal temperatureCibleCelsius;
     @Column(precision = 3, scale = 1)
@@ -33,11 +34,11 @@ public class Etang extends Structure {
         profondeurM = v;
     }
 
-    public String getSystemeAeration() {
+    public SystemeAeration getSystemeAeration() {
         return systemeAeration;
     }
 
-    public void setSystemeAeration(String v) {
+    public void setSystemeAeration(SystemeAeration v) {
         systemeAeration = v;
     }
 

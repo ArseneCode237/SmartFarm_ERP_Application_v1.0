@@ -1,13 +1,17 @@
 package com.reseau_partage.core.entities;
 
 public enum Categorie {
-    // Catégories existantes pour les porcins
-    TRUIE, 
-    VERRAT, 
-    PORCELET, 
-    COCHONNET, 
-    ENGRAISSEMENT, 
+    // ── Porcins ───────────────────────────────────────────────────────────────
+    TRUIE,
+    VERRAT,
+    PORCELET,
+    COCHONNET,
+
+    // ── Commun élevage ────────────────────────────────────────────────────────
+    ENGRAISSEMENT,
     REPRODUCTEUR,
+
+    // ── Aquaculture / Poissons ────────────────────────────────────────────────
     ALEVIN,
     JUVENILE,
     ADULTE

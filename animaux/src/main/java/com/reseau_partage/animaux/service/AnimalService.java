@@ -19,6 +19,7 @@ import com.reseau_partage.animaux.exception.ResourceNotFoundException;
 import com.reseau_partage.animaux.exception.TransitionStatutInvalideException;
 import com.reseau_partage.animaux.mapper.AnimalMapper;
 import com.reseau_partage.core.entities.Animal;
+import com.reseau_partage.core.entities.AuditAnimal;
 import com.reseau_partage.core.entities.Bande;
 import com.reseau_partage.core.entities.Espece;
 import com.reseau_partage.core.entities.ModeSuivi;
@@ -28,7 +29,6 @@ import com.reseau_partage.core.entities.StatutBande;
 import com.reseau_partage.core.entities.StatutStructure;
 import com.reseau_partage.core.entities.Structure;
 import com.reseau_partage.core.entities.TypeMouvement;
-import com.reseau_partage.core.entities.AuditAnimal;
 import com.reseau_partage.core.repository.AnimalRepository;
 import com.reseau_partage.core.repository.AuditAnimalRepository;
 import com.reseau_partage.core.repository.BandeRepository;
@@ -140,6 +140,40 @@ public class AnimalService {
     public AnimalResponse get(Long id) {
         Animal animal = animalRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Animal", id));
         return toResponse(animal);
+    }
+
+    /**
+     * Récupère les données d'un animal existant pour pré-remplir un nouveau formulaire.
+     * Les codes uniques (RFID, boucle) ne sont PAS dupliqués (doivent rester uniques).
+     * Les dates de naissance et d'entrée sont remises à null/l'utilisateur les définira.
+     */
+    @Transactional(readOnly = true)
+    public AnimalRequest duplicate(Long id) {
+        Animal a = animalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Animal", id));
+
+        return new AnimalRequest(
+                null, // codeRfid : unique, doit être saisi à nouveau
+                null, // codeBoucle : unique, doit être saisi à nouveau
+                a.getEspece(),
+                a.getRace(),
+                a.getSouche(),
+                a.getSexe(),
+                null, // dateNaissance : individuelle, remise à null
+                null, // dateEntree : remise à null (date du jour à la création)
+                a.getPoidsEntreeKg(),
+                a.getModeSuivi(),
+                a.getBande() != null ? a.getBande().getId() : null,
+                a.getStructure() != null ? a.getStructure().getId() : null,
+                a.getLoge() != null ? a.getLoge().getId() : null,
+                a.getMere() != null ? a.getMere().getId() : null,
+                a.getPere() != null ? a.getPere().getId() : null,
+                a.getProvenance(),
+                a.getFournisseurNom(),
+                a.getNumeroLotAchat(),
+                null, // dateDerniereDeclaration : remise à zéro
+                a.getNotes()
+        );
     }
 
     @Transactional
@@ -293,7 +327,7 @@ public class AnimalService {
             case CAPRIN -> "CA";
             case PORC -> "PO";
             case LAPIN -> "LA";
-            case TILAPIA, SILURE, CARPE, CREVETTE, CAPITAINE -> "AQ";
+            case TILAPIA, SILURE, CARPE, CREVETTE, CAPITAINE, POISSON -> "AQ";
             default -> "XX";
         };
         long sequence = animalRepository.count() + 1;

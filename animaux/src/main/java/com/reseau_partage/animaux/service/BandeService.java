@@ -110,6 +110,67 @@ public class BandeService {
         return toResponse(bande);
     }
 
+    /**
+     * Récupère les données d'une bande existante pour pré-remplir un nouveau formulaire.
+     * Le nom est préfixé avec "Copie - ".
+     * Les données de configuration sont conservées (espèce, race, type, etc.).
+     * Les statistiques d'usage (effectifs, déclarations, revenus, dates) sont remises à zéro/null.
+     */
+    @Transactional(readOnly = true)
+    public BandeRequest duplicate(Long id) {
+        Bande b = bandeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Bande", id));
+
+        String nomCopie = "Copie - " + b.getNom();
+
+        return new BandeRequest(
+                nomCopie,
+                b.getEspece(),
+                b.getRace(),
+                b.getSouche(),
+                b.getCategorie(),
+                b.getTypeProduction(),
+                b.getSite() != null ? b.getSite().getId() : null,
+                b.getStructure() != null ? b.getStructure().getId() : null,
+                b.getProvenance(),
+                b.getFournisseurNom(),
+                b.getCoutAchatUnitaire(),
+                b.getEffectifInitial(),
+                null, // effectifActuel : remis à zéro
+                null, // effectifMorts
+                null, // effectifVendus
+                null, // effectifReformes
+                null, // totalDeclaresMorts
+                null, // totalDeclaresVendus
+                null, // totalDeclaresReformes
+                null, // revenuTotalVentes
+                null, // dateDerniereDeclaration
+                null, // dateEntree : sera la date de création
+                null, // dateSortiePrevue
+                null, // dateSortieReelle
+                b.getPoidsMoyenEntreeKg(),
+                null, // poidsMoyenActuelKg
+                null, // poidsTotalSortie
+                b.getRationJournaliereKg(),
+                null, // fcrCumule
+                null, // tauxPontePct
+                null, // gainMoyenQuotidienG
+                b.getDescription(),
+                null, // statut : EN_COURS à la création
+                b.getNotes(),
+                b.getMere() != null ? b.getMere().getId() : null,
+                b.getPere() != null ? b.getPere().getId() : null,
+                b.getDensitePoissons(),
+                b.getTailleMoyenne(),
+                b.getAlimentation(),
+                b.getSystemeElevage(),
+                b.getTemperatureEau(),
+                b.getPhEau(),
+                b.getOxygeneDissous(),
+                b.getRacePoisson()
+        );
+    }
+
     @Transactional
     public BandeResponse update(Long id, BandeRequest request) {
         Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande non trouvée avec l'ID : " + id));
@@ -302,7 +363,7 @@ public class BandeService {
             case CAPRIN -> "CA";
             case PORC -> "PO";
             case LAPIN -> "LA";
-            case TILAPIA, SILURE, CARPE, CREVETTE, CAPITAINE -> "AQ";
+            case TILAPIA, SILURE, CARPE, CREVETTE, CAPITAINE, POISSON -> "AQ";
             default -> "XX";
         };
         long seq = bandeRepository.count() + 1;

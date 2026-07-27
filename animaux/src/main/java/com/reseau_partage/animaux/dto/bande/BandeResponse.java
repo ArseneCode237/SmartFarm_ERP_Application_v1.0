@@ -1,14 +1,14 @@
 package com.reseau_partage.animaux.dto.bande;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import com.reseau_partage.core.entities.Categorie;
 import com.reseau_partage.core.entities.Espece;
 import com.reseau_partage.core.entities.Provenance;
 import com.reseau_partage.core.entities.StatutBande;
 import com.reseau_partage.core.entities.TypeProduction;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 public record BandeResponse(
         // ============================================
@@ -73,8 +73,8 @@ public record BandeResponse(
         // Paramètres aquacoles
         BigDecimal densitePoissons,
         BigDecimal tailleMoyenne,
-        String alimentation,
-        String systemeElevage,
+        com.reseau_partage.core.entities.AlimentationPoisson alimentation,
+        com.reseau_partage.core.entities.SystemeElevagePoisson systemeElevage,
         BigDecimal temperatureEau,
         BigDecimal phEau,
         BigDecimal oxygeneDissous,

@@ -2,6 +2,8 @@ package com.reseau_partage.organisation.dto;
 
 import java.math.BigDecimal;
 
+import com.reseau_partage.core.entities.SystemeAeration;
+
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -32,7 +34,7 @@ public record StructureRequest(
         // ── Etang ────────────────────────────────────────────────────────────
         BigDecimal volumeM3,
         BigDecimal profondeurM,
-        String     systemeAeration,
+        SystemeAeration systemeAeration,
         BigDecimal temperatureCibleCelsius,
         BigDecimal phCible,
 

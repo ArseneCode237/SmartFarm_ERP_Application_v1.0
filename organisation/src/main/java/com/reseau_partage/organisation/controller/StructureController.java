@@ -123,4 +123,15 @@ public class StructureController {
     public ResponseEntity<Map<String, Object>> occupancy(@PathVariable Long id) {
         return ResponseEntity.ok(service.occupancy(id));
     }
+
+    /**
+     * GET /api/organisation/structures/{id}/duplicate
+     * Récupère les données d'une structure existante pour pré-remplir un nouveau formulaire.
+     * Le nom est préfixé avec "Copie - " pour indiquer clairement la duplication.
+     * Aucun ID ni code unique n'est renvoyé : ces valeurs devront être générées à la création.
+     */
+    @GetMapping("/{id}/duplicate")
+    public ResponseEntity<StructureRequest> duplicate(@PathVariable Long id) {
+        return ResponseEntity.ok(service.duplicateStructure(id));
+    }
 }

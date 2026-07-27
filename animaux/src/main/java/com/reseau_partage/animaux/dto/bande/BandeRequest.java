@@ -61,8 +61,8 @@ public record BandeRequest(
         // Paramètres aquacoles
         BigDecimal densitePoissons,
         BigDecimal tailleMoyenne,
-        String alimentation,
-        String systemeElevage,
+        com.reseau_partage.core.entities.AlimentationPoisson alimentation,
+        com.reseau_partage.core.entities.SystemeElevagePoisson systemeElevage,
         BigDecimal temperatureEau,
         BigDecimal phEau,
         BigDecimal oxygeneDissous,

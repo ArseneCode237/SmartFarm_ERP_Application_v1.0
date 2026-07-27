@@ -1,6 +1,6 @@
 package com.reseau_partage.core.entities;
 
-public enum MotifDeclaration {
+    public enum MotifDeclaration {
     // MORT
     MALADIE,
     ACCIDENT,
