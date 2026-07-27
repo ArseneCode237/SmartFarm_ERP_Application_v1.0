@@ -230,8 +230,11 @@ public class DeclarationService {
         if (request.prixUnitaire() == null) {
             throw new IllegalArgumentException("Le prix unitaire est obligatoire pour une vente");
         }
-        if (request.nomAcheteur() == null || request.nomAcheteur().isBlank()) {
-            throw new IllegalArgumentException("Le nom de l'acheteur est obligatoire pour une vente");
+        // Pour un marché public, l'acheteur est anonyme — nom optionnel
+        boolean estMarche = request.motif() == MotifDeclaration.MARCHE;
+        if (!estMarche && (request.nomAcheteur() == null || request.nomAcheteur().isBlank())) {
+            throw new IllegalArgumentException(
+                "Le nom de l'acheteur est obligatoire pour une vente (optionnel uniquement pour le motif MARCHE)");
         }
     }
 

@@ -1,21 +1,30 @@
 package com.reseau_partage.animaux.service;
 
-import com.reseau_partage.animaux.dto.declaration.DeclarationAnimalRequest;
-import com.reseau_partage.animaux.dto.declaration.DeclarationAnimalResponse;
-import com.reseau_partage.animaux.exception.ResourceNotFoundException;
-import com.reseau_partage.core.entities.*;
-import com.reseau_partage.core.repository.AnimalRepository;
-import com.reseau_partage.core.repository.DeclarationAnimalHistoriqueRepository;
-import com.reseau_partage.core.repository.DeclarationAnimalRepository;
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import com.reseau_partage.animaux.dto.declaration.DeclarationAnimalRequest;
+import com.reseau_partage.animaux.dto.declaration.DeclarationAnimalResponse;
+import com.reseau_partage.animaux.exception.ResourceNotFoundException;
+import com.reseau_partage.core.entities.ActionHistorique;
+import com.reseau_partage.core.entities.Animal;
+import com.reseau_partage.core.entities.DeclarationAnimal;
+import com.reseau_partage.core.entities.DeclarationAnimalHistorique;
+import com.reseau_partage.core.entities.MotifDeclaration;
+import com.reseau_partage.core.entities.SourceDeclaration;
+import com.reseau_partage.core.entities.StatutAnimal;
+import com.reseau_partage.core.entities.StatutDeclaration;
+import com.reseau_partage.core.entities.TypeDeclaration;
+import com.reseau_partage.core.repository.AnimalRepository;
+import com.reseau_partage.core.repository.DeclarationAnimalHistoriqueRepository;
+import com.reseau_partage.core.repository.DeclarationAnimalRepository;
 
 @Service
 public class DeclarationAnimalService {
@@ -149,8 +158,11 @@ public class DeclarationAnimalService {
         if (request.prixUnitaire() == null) {
             throw new IllegalArgumentException("Le prix unitaire est obligatoire pour une vente");
         }
-        if (request.nomAcheteur() == null || request.nomAcheteur().isBlank()) {
-            throw new IllegalArgumentException("Le nom de l'acheteur est obligatoire pour une vente");
+        // Pour un marché public, l'acheteur est anonyme — nom optionnel
+        boolean estMarche = request.motif() == MotifDeclaration.MARCHE;
+        if (!estMarche && (request.nomAcheteur() == null || request.nomAcheteur().isBlank())) {
+            throw new IllegalArgumentException(
+                "Le nom de l'acheteur est obligatoire pour une vente (optionnel uniquement pour le motif MARCHE)");
         }
     }
 
