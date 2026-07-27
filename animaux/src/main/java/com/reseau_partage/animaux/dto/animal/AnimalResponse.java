@@ -33,6 +33,8 @@ public record AnimalResponse(
         Long structureId,
         String structureNom,
         String siteNom,
+        Long logeId,
+        String logeNom,
         Long mereId,
         String mereCode,
         Long pereId,

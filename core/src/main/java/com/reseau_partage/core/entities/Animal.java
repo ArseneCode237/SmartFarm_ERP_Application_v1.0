@@ -79,6 +79,10 @@ public class Animal {
     private Structure structure;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "loge_id")
+    private Loge loge;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mere_id")
     private Animal mere;
 
@@ -172,6 +176,8 @@ public class Animal {
     public void setBande(Bande bande) { this.bande = bande; }
     public Structure getStructure() { return structure; }
     public void setStructure(Structure structure) { this.structure = structure; }
+    public Loge getLoge() { return loge; }
+    public void setLoge(Loge loge) { this.loge = loge; }
     public Animal getMere() { return mere; }
     public void setMere(Animal mere) { this.mere = mere; }
     public Animal getPere() { return pere; }

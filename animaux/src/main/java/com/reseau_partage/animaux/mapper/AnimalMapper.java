@@ -12,6 +12,8 @@ public interface AnimalMapper {
     @Mapping(target = "siteNom", source = "structure.site.nom")
     @Mapping(target = "bandeId", source = "bande.id")
     @Mapping(target = "bandeNom", source = "bande.nom")
+    @Mapping(target = "logeId", source = "loge.id")
+    @Mapping(target = "logeNom", source = "loge.nom")
     @Mapping(target = "mereId", source = "mere.id")
     @Mapping(target = "mereCode", source = "mere.codeUnique")
     @Mapping(target = "pereId", source = "pere.id")
@@ -23,6 +25,7 @@ public interface AnimalMapper {
     @Mapping(target = "statut", ignore = true)
     @Mapping(target = "dateCreation", ignore = true)
     @Mapping(target = "dateModification", ignore = true)
+    @Mapping(target = "loge", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     Animal toEntity(com.reseau_partage.animaux.dto.animal.AnimalRequest request);
 }

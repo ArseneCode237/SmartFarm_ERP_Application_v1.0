@@ -47,9 +47,10 @@ public class AnimalService {
     private final SiteRepository siteRepository;
     private final FermeRepository fermeRepository;
     private final AuditAnimalRepository auditRepository;
+    private final com.reseau_partage.core.repository.LogeRepository logeRepository;
     private final AnimalMapper animalMapper;
 
-    public AnimalService(AnimalRepository animalRepository, BandeRepository bandeRepository, MouvementAnimalRepository mouvementRepository, StructureRepository structureRepository, SiteRepository siteRepository, FermeRepository fermeRepository, AuditAnimalRepository auditRepository, AnimalMapper animalMapper) {
+    public AnimalService(AnimalRepository animalRepository, BandeRepository bandeRepository, MouvementAnimalRepository mouvementRepository, StructureRepository structureRepository, SiteRepository siteRepository, FermeRepository fermeRepository, AuditAnimalRepository auditRepository, com.reseau_partage.core.repository.LogeRepository logeRepository, AnimalMapper animalMapper) {
         this.animalRepository = animalRepository;
         this.bandeRepository = bandeRepository;
         this.mouvementRepository = mouvementRepository;
@@ -57,6 +58,7 @@ public class AnimalService {
         this.siteRepository = siteRepository;
         this.fermeRepository = fermeRepository;
         this.auditRepository = auditRepository;
+        this.logeRepository = logeRepository;
         this.animalMapper = animalMapper;
     }
 
@@ -119,6 +121,11 @@ public class AnimalService {
             Bande bande = bandeRepository.findById(request.bandeId()).orElseThrow();
             animal.setBande(bande);
         }
+        if (request.logeId() != null) {
+            com.reseau_partage.core.entities.Loge loge = logeRepository.findById(request.logeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Loge", request.logeId()));
+            animal.setLoge(loge);
+        }
         animalRepository.save(animal);
         enregistrerMouvementEntree(animal);
         return toResponse(animal);
@@ -148,6 +155,13 @@ public class AnimalService {
                     .orElseThrow(() -> new ResourceNotFoundException("Structure", request.structureId()));
             animal.setStructure(destination);
             enregistrerMouvementTransfert(animal, destination);
+        }
+        if (request.logeId() != null && (animal.getLoge() == null || !Objects.equals(request.logeId(), animal.getLoge().getId()))) {
+            com.reseau_partage.core.entities.Loge loge = logeRepository.findById(request.logeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Loge", request.logeId()));
+            animal.setLoge(loge);
+        } else if (request.logeId() == null && animal.getLoge() != null) {
+            animal.setLoge(null);
         }
         enregistrerAudit(animal, "Modification animal");
         return toResponse(animal);

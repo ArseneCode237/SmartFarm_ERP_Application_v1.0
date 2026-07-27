@@ -23,6 +23,7 @@ public record AnimalRequest(
         @NotNull ModeSuivi modeSuivi,
         Long bandeId,
         @NotNull Long structureId,
+        Long logeId,
         Long mereId,
         Long pereId,
         Provenance provenance,

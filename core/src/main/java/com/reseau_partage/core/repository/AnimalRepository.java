@@ -23,6 +23,8 @@ public interface AnimalRepository extends JpaRepository<Animal, Long> {
     List<Animal> findByStructureId(Long structureId);
     long countByStructureId(Long structureId);
     List<Animal> findByBandeId(Long bandeId);
+    List<Animal> findByLogeId(Long logeId);
+    long countByLogeId(Long logeId);
     List<Animal> findByEspeceAndStatut(Espece espece, StatutAnimal statut);
     List<Animal> findByStatut(StatutAnimal statut);
 
