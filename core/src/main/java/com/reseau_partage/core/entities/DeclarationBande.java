@@ -1,9 +1,20 @@
 package com.reseau_partage.core.entities;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "declarations_bande", indexes = {
@@ -140,12 +151,20 @@ public class DeclarationBande {
         this.dateCreation = LocalDateTime.now();
         this.dateModification = LocalDateTime.now();
 
+        // Calcul automatique poidsTotalKg
         if (this.poidsMoyenKg != null && this.quantite != null) {
             this.poidsTotalKg = this.poidsMoyenKg.multiply(BigDecimal.valueOf(this.quantite));
         }
 
+        // Calcul automatique montantTotal
         if (this.type == TypeDeclaration.VENTE && this.prixUnitaire != null && this.quantite != null) {
-            this.montantTotal = this.prixUnitaire.multiply(BigDecimal.valueOf(this.quantite));
+            if (Boolean.TRUE.equals(this.prixParKg) && this.poidsTotalKg != null) {
+                // Prix au kg : montant = prixUnitaire × poidsTotalKg
+                this.montantTotal = this.prixUnitaire.multiply(this.poidsTotalKg);
+            } else {
+                // Prix à la tête : montant = prixUnitaire × quantite
+                this.montantTotal = this.prixUnitaire.multiply(BigDecimal.valueOf(this.quantite));
+            }
         }
     }
 

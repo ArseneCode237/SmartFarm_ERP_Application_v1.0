@@ -1,5 +1,6 @@
 package com.reseau_partage.animaux.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,6 +64,15 @@ public class DeclarationAnimalService {
         declaration.setMotif(request.motif());
         declaration.setDateDeclaration(request.dateDeclaration());
         declaration.setPoidsKg(request.poidsKg());
+        // Poids total : fourni ou calculé depuis poidsKg
+        BigDecimal poidsTotalKg = request.poidsTotalKg() != null
+                ? request.poidsTotalKg()
+                : request.poidsKg();
+        declaration.setPoidsTotalKg(poidsTotalKg);
+        // Poids moyen : fourni ou égal au poids individuel (1 animal)
+        declaration.setPoidsMoyenKg(request.poidsMoyenKg() != null
+                ? request.poidsMoyenKg()
+                : request.poidsKg());
         declaration.setPrixParKg(request.prixParKg() != null ? request.prixParKg() : false);
         declaration.setPrixUnitaire(request.prixUnitaire());
         declaration.setNomAcheteur(request.nomAcheteur());
@@ -237,6 +247,8 @@ public class DeclarationAnimalService {
                 d.getMotif(),
                 d.getDateDeclaration(),
                 d.getPoidsKg(),
+                d.getPoidsTotalKg(),
+                d.getPoidsMoyenKg(),
                 d.getPrixParKg(),
                 d.getPrixUnitaire(),
                 d.getMontantTotal(),

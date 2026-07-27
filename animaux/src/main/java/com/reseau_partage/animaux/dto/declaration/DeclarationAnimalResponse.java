@@ -1,13 +1,13 @@
 package com.reseau_partage.animaux.dto.declaration;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import com.reseau_partage.core.entities.MotifDeclaration;
 import com.reseau_partage.core.entities.SourceDeclaration;
 import com.reseau_partage.core.entities.StatutDeclaration;
 import com.reseau_partage.core.entities.TypeDeclaration;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 public record DeclarationAnimalResponse(
         Long id,
@@ -20,6 +20,8 @@ public record DeclarationAnimalResponse(
         MotifDeclaration motif,
         LocalDate dateDeclaration,
         BigDecimal poidsKg,
+        BigDecimal poidsTotalKg,
+        BigDecimal poidsMoyenKg,
         Boolean prixParKg,
         BigDecimal prixUnitaire,
         BigDecimal montantTotal,

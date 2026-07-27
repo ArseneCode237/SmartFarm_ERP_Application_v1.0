@@ -1,9 +1,20 @@
 package com.reseau_partage.core.entities;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "declarations_animaux", indexes = {
@@ -60,6 +71,14 @@ public class DeclarationAnimal {
     @Column(name = "poids_kg", precision = 8, scale = 3)
     private BigDecimal poidsKg;
 
+    /** Poids total de la vente (kg) — saisi ou calculé : poidsKg × 1 pour un animal individuel. */
+    @Column(name = "poids_total_kg", precision = 10, scale = 2)
+    private BigDecimal poidsTotalKg;
+
+    /** Poids moyen par animal (calculé automatiquement = poidsTotalKg / 1 pour un individu). */
+    @Column(name = "poids_moyen_kg", precision = 10, scale = 2)
+    private BigDecimal poidsMoyenKg;
+
     @Column(name = "prix_par_kg")
     private Boolean prixParKg = false;
 
@@ -102,8 +121,20 @@ public class DeclarationAnimal {
     protected void onCreate() {
         this.dateCreation = LocalDateTime.now();
         this.dateModification = LocalDateTime.now();
+        // Calcul automatique poidsTotalKg et poidsMoyenKg
+        if (this.poidsKg != null) {
+            this.poidsTotalKg = this.poidsKg;
+            this.poidsMoyenKg = this.poidsKg;
+        }
+        // Calcul automatique montantTotal
         if (this.type == TypeDeclaration.VENTE && this.prixUnitaire != null) {
-            this.montantTotal = this.prixUnitaire;
+            if (Boolean.TRUE.equals(this.prixParKg) && this.poidsTotalKg != null) {
+                // Prix au kg : montant = prixUnitaire × poidsTotalKg
+                this.montantTotal = this.prixUnitaire.multiply(this.poidsTotalKg);
+            } else {
+                // Prix à la tête : montant = prixUnitaire × 1 (animal individuel)
+                this.montantTotal = this.prixUnitaire;
+            }
         }
     }
 
@@ -139,6 +170,10 @@ public class DeclarationAnimal {
     public void setDateModification(LocalDateTime dateModification) { this.dateModification = dateModification; }
     public BigDecimal getPoidsKg() { return poidsKg; }
     public void setPoidsKg(BigDecimal poidsKg) { this.poidsKg = poidsKg; }
+    public BigDecimal getPoidsTotalKg() { return poidsTotalKg; }
+    public void setPoidsTotalKg(BigDecimal poidsTotalKg) { this.poidsTotalKg = poidsTotalKg; }
+    public BigDecimal getPoidsMoyenKg() { return poidsMoyenKg; }
+    public void setPoidsMoyenKg(BigDecimal poidsMoyenKg) { this.poidsMoyenKg = poidsMoyenKg; }
     public Boolean getPrixParKg() { return prixParKg; }
     public void setPrixParKg(Boolean prixParKg) { this.prixParKg = prixParKg; }
     public BigDecimal getPrixUnitaire() { return prixUnitaire; }
