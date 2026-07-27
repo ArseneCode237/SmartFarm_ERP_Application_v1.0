@@ -110,6 +110,15 @@ public class AnimalController {
         return ResponseEntity.ok(Map.of("data", service.recherche(q)));
     }
 
+    @GetMapping("/parents")
+    public ResponseEntity<Map<String, Object>> listForParentSelection(
+            @RequestParam Sexe sexe,
+            @RequestParam(required = false) Long fermeId,
+            @RequestParam(required = false) Long structureId) {
+        List<AnimalResponse> animals = service.listAnimalsForParentSelection(sexe, fermeId, structureId);
+        return ResponseEntity.ok(Map.of("content", animals));
+    }
+
     @GetMapping("/surveiller")
     public ResponseEntity<Map<String, Object>> surveiller(@RequestParam(required = false) Long fermeId) {
         if (fermeId == null) {

@@ -41,4 +41,18 @@ public interface AnimalRepository extends JpaRepository<Animal, Long> {
     Page<Animal> findByEspeceAndStatutAndModeSuiviAndStructureIdAndBandeId(
             Espece espece, StatutAnimal statut, com.reseau_partage.core.entities.ModeSuivi modeSuivi,
             Long structureId, Long bandeId, Pageable pageable);
+
+    List<Animal> findBySexeAndStatut(com.reseau_partage.core.entities.Sexe sexe, StatutAnimal statut);
+
+    @Query("SELECT a FROM Animal a WHERE a.sexe = :sexe AND a.statut = :statut AND a.structure.site.ferme.id = :fermeId")
+    List<Animal> findBySexeAndStatutAndFermeId(
+            @Param("sexe") com.reseau_partage.core.entities.Sexe sexe,
+            @Param("statut") StatutAnimal statut,
+            @Param("fermeId") Long fermeId);
+
+    @Query("SELECT a FROM Animal a WHERE a.sexe = :sexe AND a.statut = :statut AND a.structure.id = :structureId")
+    List<Animal> findBySexeAndStatutAndStructureId(
+            @Param("sexe") com.reseau_partage.core.entities.Sexe sexe,
+            @Param("statut") StatutAnimal statut,
+            @Param("structureId") Long structureId);
 }
