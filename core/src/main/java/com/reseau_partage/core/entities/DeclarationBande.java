@@ -107,6 +107,34 @@ public class DeclarationBande {
     @Column(name = "utilisateur_annulation_id")
     private Long utilisateurAnnulationId;
 
+    // ============================================
+    // 🔥 NOUVEAUX CHAMPS SPÉCIFIQUES AUX POISSONS
+    // ============================================
+
+    @Column(name = "densite_poissons", precision = 10, scale = 2)
+    private BigDecimal densitePoissons;
+
+    @Column(name = "taille_moyenne", precision = 8, scale = 2)
+    private BigDecimal tailleMoyenne;
+
+    @Column(name = "alimentation", length = 50)
+    private String alimentation;
+
+    @Column(name = "systeme_elevage", length = 30)
+    private String systemeElevage;
+
+    @Column(name = "temperature_eau", precision = 5, scale = 2)
+    private BigDecimal temperatureEau;
+
+    @Column(name = "ph_eau", precision = 4, scale = 2)
+    private BigDecimal phEau;
+
+    @Column(name = "oxygene_dissous", precision = 6, scale = 2)
+    private BigDecimal oxygeneDissous;
+
+    @Column(name = "race_poisson", length = 50)
+    private String racePoisson;
+
     @PrePersist
     protected void onCreate() {
         this.dateCreation = LocalDateTime.now();
@@ -126,7 +154,10 @@ public class DeclarationBande {
         this.dateModification = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    // ============================================
+    // GETTERS ET SETTERS EXISTANTS
+    // ============================================
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getBandeId() { return bandeId; }
@@ -184,4 +215,32 @@ public class DeclarationBande {
     public void setDateAnnulation(LocalDateTime dateAnnulation) { this.dateAnnulation = dateAnnulation; }
     public Long getUtilisateurAnnulationId() { return utilisateurAnnulationId; }
     public void setUtilisateurAnnulationId(Long utilisateurAnnulationId) { this.utilisateurAnnulationId = utilisateurAnnulationId; }
+
+    // ============================================
+    // 🔥 GETTERS ET SETTERS POUR LES CHAMPS POISSONS
+    // ============================================
+
+    public BigDecimal getDensitePoissons() { return densitePoissons; }
+    public void setDensitePoissons(BigDecimal densitePoissons) { this.densitePoissons = densitePoissons; }
+
+    public BigDecimal getTailleMoyenne() { return tailleMoyenne; }
+    public void setTailleMoyenne(BigDecimal tailleMoyenne) { this.tailleMoyenne = tailleMoyenne; }
+
+    public String getAlimentation() { return alimentation; }
+    public void setAlimentation(String alimentation) { this.alimentation = alimentation; }
+
+    public String getSystemeElevage() { return systemeElevage; }
+    public void setSystemeElevage(String systemeElevage) { this.systemeElevage = systemeElevage; }
+
+    public BigDecimal getTemperatureEau() { return temperatureEau; }
+    public void setTemperatureEau(BigDecimal temperatureEau) { this.temperatureEau = temperatureEau; }
+
+    public BigDecimal getPhEau() { return phEau; }
+    public void setPhEau(BigDecimal phEau) { this.phEau = phEau; }
+
+    public BigDecimal getOxygeneDissous() { return oxygeneDissous; }
+    public void setOxygeneDissous(BigDecimal oxygeneDissous) { this.oxygeneDissous = oxygeneDissous; }
+
+    public String getRacePoisson() { return racePoisson; }
+    public void setRacePoisson(String racePoisson) { this.racePoisson = racePoisson; }
 }

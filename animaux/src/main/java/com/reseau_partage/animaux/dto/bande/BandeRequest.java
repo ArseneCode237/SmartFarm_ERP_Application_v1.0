@@ -11,6 +11,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record BandeRequest(
+        // ============================================
+        // CHAMPS EXISTANTS
+        // ============================================
+        
         @NotNull String nom,
         @NotNull Espece espece,
         String race,
@@ -44,6 +48,55 @@ public record BandeRequest(
         BigDecimal gainMoyenQuotidienG,
         String description,
         StatutBande statut,
-        String notes
+        String notes,
+
+        // ============================================
+        // 🔥 NOUVEAUX CHAMPS SPÉCIFIQUES AUX POISSONS
+        // ============================================
+        
+        // Origine (pour NAISSANCE_INTERNE)
+        Long mereId,
+        Long pereId,
+        
+        // Paramètres aquacoles
+        BigDecimal densitePoissons,
+        BigDecimal tailleMoyenne,
+        String alimentation,
+        String systemeElevage,
+        BigDecimal temperatureEau,
+        BigDecimal phEau,
+        BigDecimal oxygeneDissous,
+        String racePoisson
 ) {
+    /**
+     * Vérifie si la requête concerne des poissons
+     */
+    public boolean isPoisson() {
+        return espece != null && espece == Espece.POISSON;
+    }
+
+    /**
+     * Vérifie si la provenance est NAISSANCE_INTERNE
+     */
+    public boolean isNaissanceInterne() {
+        return provenance != null && provenance == Provenance.NAISSANCE_INTERNE;
+    }
+
+    /**
+     * Vérifie si la provenance est ACHAT_EXTERNE
+     */
+    public boolean isAchatExterne() {
+        return provenance != null && provenance == Provenance.ACHAT_EXTERNE;
+    }
+
+    /**
+     * Récupère la catégorie appropriée selon l'espèce
+     */
+    public Categorie getEffectiveCategorie() {
+        if (categorie != null) {
+            return categorie;
+        }
+        // Valeur par défaut selon l'espèce
+        return isPoisson() ? Categorie.JUVENILE : Categorie.PORCELET;
+    }
 }
