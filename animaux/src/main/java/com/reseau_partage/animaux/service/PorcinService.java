@@ -37,30 +37,30 @@ import com.reseau_partage.core.repository.StructureRepository;
 @Service
 public class PorcinService {
 
-    // Transitions autorisées : clé = statut actuel, valeurs = statuts cibles acceptés
-    private static final java.util.Map<StatutReproductifPorcin, Set<StatutReproductifPorcin>> TRANSITIONS =
-            java.util.Map.of(
+    // Transitions autorisées : clé = statut actuel, valeurs = statuts cibles
+    // acceptés
+    private static final java.util.Map<StatutReproductifPorcin, Set<StatutReproductifPorcin>> TRANSITIONS = java.util.Map
+            .of(
                     StatutReproductifPorcin.COCHETTE,
-                        Set.of(StatutReproductifPorcin.EN_ATTENTE_SAILLIE),
+                    Set.of(StatutReproductifPorcin.EN_ATTENTE_SAILLIE),
                     StatutReproductifPorcin.EN_ATTENTE_SAILLIE,
-                        Set.of(StatutReproductifPorcin.SAILLIE),
+                    Set.of(StatutReproductifPorcin.SAILLIE),
                     StatutReproductifPorcin.SAILLIE,
-                        Set.of(StatutReproductifPorcin.GESTATION, StatutReproductifPorcin.EN_CHALEUR),
+                    Set.of(StatutReproductifPorcin.GESTATION, StatutReproductifPorcin.EN_CHALEUR),
                     StatutReproductifPorcin.GESTATION,
-                        Set.of(StatutReproductifPorcin.PRE_MISE_BAS, StatutReproductifPorcin.EN_CHALEUR),
+                    Set.of(StatutReproductifPorcin.PRE_MISE_BAS, StatutReproductifPorcin.EN_CHALEUR),
                     StatutReproductifPorcin.PRE_MISE_BAS,
-                        Set.of(StatutReproductifPorcin.MISE_BAS),
+                    Set.of(StatutReproductifPorcin.MISE_BAS),
                     StatutReproductifPorcin.MISE_BAS,
-                        Set.of(StatutReproductifPorcin.LACTATION),
+                    Set.of(StatutReproductifPorcin.LACTATION),
                     StatutReproductifPorcin.LACTATION,
-                        Set.of(StatutReproductifPorcin.SEVRAGE),
+                    Set.of(StatutReproductifPorcin.SEVRAGE),
                     StatutReproductifPorcin.SEVRAGE,
-                        Set.of(StatutReproductifPorcin.EN_CHALEUR),
+                    Set.of(StatutReproductifPorcin.EN_CHALEUR),
                     StatutReproductifPorcin.EN_CHALEUR,
-                        Set.of(StatutReproductifPorcin.SAILLIE),
+                    Set.of(StatutReproductifPorcin.SAILLIE),
                     StatutReproductifPorcin.VERRAT,
-                        Set.of(StatutReproductifPorcin.REFORME)
-            );
+                    Set.of(StatutReproductifPorcin.REFORME));
 
     private final AnimalRepository animalRepository;
     private final StructureRepository structureRepository;
@@ -72,21 +72,21 @@ public class PorcinService {
     private final MiseBaService miseBaService;
 
     public PorcinService(AnimalRepository animalRepository,
-                         StructureRepository structureRepository,
-                         ProfilPorcinRepository profilPorcinRepository,
-                         MouvementAnimalRepository mouvementRepository,
-                         SaillieRepository saillieRepository,
-                         MiseBaRepository miseBaRepository,
-                         @Lazy SaillieService saillieService,
-                         @Lazy MiseBaService miseBaService) {
-        this.animalRepository       = animalRepository;
-        this.structureRepository    = structureRepository;
+            StructureRepository structureRepository,
+            ProfilPorcinRepository profilPorcinRepository,
+            MouvementAnimalRepository mouvementRepository,
+            SaillieRepository saillieRepository,
+            MiseBaRepository miseBaRepository,
+            @Lazy SaillieService saillieService,
+            @Lazy MiseBaService miseBaService) {
+        this.animalRepository = animalRepository;
+        this.structureRepository = structureRepository;
         this.profilPorcinRepository = profilPorcinRepository;
-        this.mouvementRepository    = mouvementRepository;
-        this.saillieRepository      = saillieRepository;
-        this.miseBaRepository       = miseBaRepository;
-        this.saillieService         = saillieService;
-        this.miseBaService          = miseBaService;
+        this.mouvementRepository = mouvementRepository;
+        this.saillieRepository = saillieRepository;
+        this.miseBaRepository = miseBaRepository;
+        this.saillieService = saillieService;
+        this.miseBaService = miseBaService;
     }
 
     /** Crée un porcin individuel (achat, naissance interne, don). */
@@ -159,11 +159,12 @@ public class PorcinService {
         return animaux.stream()
                 .filter(a -> fermeId == null
                         || (a.getStructure() != null
-                            && a.getStructure().getSite() != null
-                            && a.getStructure().getSite().getFerme() != null
-                            && a.getStructure().getSite().getFerme().getId().equals(fermeId)))
+                                && a.getStructure().getSite() != null
+                                && a.getStructure().getSite().getFerme() != null
+                                && a.getStructure().getSite().getFerme().getId().equals(fermeId)))
                 .filter(a -> {
-                    if (statutReproductif == null) return true;
+                    if (statutReproductif == null)
+                        return true;
                     ProfilPorcin p = profilPorcinRepository.findByAnimalId(a.getId()).orElse(null);
                     return p != null && p.getStatutReproductif() == statutReproductif;
                 })
@@ -254,7 +255,7 @@ public class PorcinService {
             if (!cibles.contains(nouveauStatut)) {
                 throw new IllegalArgumentException(
                         "Transition non autorisée pour le porc id=" + id + " : " + actuel + " → " + nouveauStatut
-                        + ". Transitions autorisées depuis " + actuel + " : " + cibles + ".");
+                                + ". Transitions autorisées depuis " + actuel + " : " + cibles + ".");
             }
         }
 
@@ -296,7 +297,8 @@ public class PorcinService {
     @Transactional
     public PorcinResponse reformer(Long id, CauseArchivage cause, String motif) {
         if (cause == null) {
-            throw new IllegalArgumentException("La cause d'archivage est obligatoire. Valeurs acceptées : " + java.util.Arrays.toString(CauseArchivage.values()));
+            throw new IllegalArgumentException("La cause d'archivage est obligatoire. Valeurs acceptées : "
+                    + java.util.Arrays.toString(CauseArchivage.values()));
         }
         Animal animal = animalRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Animal", id));
@@ -327,18 +329,18 @@ public class PorcinService {
         ProfilPorcin profil = profilPorcinRepository.findByAnimalId(id).orElse(null);
 
         // Saillies triées du plus récent au plus ancien
-        List<com.reseau_partage.animaux.dto.saillie.SaillieResponse> saillies =
-                saillieRepository.findByTruieIdOrderByDateSaillieDesc(id)
-                        .stream()
-                        .map(saillieService::toResponse)
-                        .toList();
+        List<com.reseau_partage.animaux.dto.saillie.SaillieResponse> saillies = saillieRepository
+                .findByTruieIdOrderByDateSaillieDesc(id)
+                .stream()
+                .map(saillieService::toResponse)
+                .toList();
 
         // Portées triées du plus récent au plus ancien
-        List<com.reseau_partage.animaux.dto.misebas.MiseBaResponse> portees =
-                miseBaRepository.findByTruieIdOrderByDateMiseBasReelleDesc(id)
-                        .stream()
-                        .map(miseBaService::toResponse)
-                        .toList();
+        List<com.reseau_partage.animaux.dto.misebas.MiseBaResponse> portees = miseBaRepository
+                .findByTruieIdOrderByDateMiseBasReelleDesc(id)
+                .stream()
+                .map(miseBaService::toResponse)
+                .toList();
 
         java.util.Map<String, Object> carriere = new java.util.LinkedHashMap<>();
         carriere.put("animal", toResponse(animal));
@@ -346,7 +348,9 @@ public class PorcinService {
         carriere.put("nbPorteesTotal",
                 profil != null && profil.getNbPorteesTotal() != null ? profil.getNbPorteesTotal() : 0);
         carriere.put("nbPorceletsTotalNesVivants",
-                profil != null && profil.getNbPorceletsTotalNesVivants() != null ? profil.getNbPorceletsTotalNesVivants() : 0);
+                profil != null && profil.getNbPorceletsTotalNesVivants() != null
+                        ? profil.getNbPorceletsTotalNesVivants()
+                        : 0);
         carriere.put("nbPorceletsTotalSevres",
                 profil != null && profil.getNbPorceletsTotalSevres() != null ? profil.getNbPorceletsTotalSevres() : 0);
         carriere.put("moyNesVivantsParPortee",
@@ -356,13 +360,14 @@ public class PorcinService {
         carriere.put("moyDureeLactationJours",
                 profil != null ? profil.getMoyDureeLactationJours() : null);
         carriere.put("saillies", saillies);
-        carriere.put("portees",  portees);
+        carriere.put("portees", portees);
         return carriere;
     }
 
     /** Dashboard KPIs reproduction d'une ferme. */
     @Transactional(readOnly = true)
-    public java.util.Map<String, Object> dashboard(Long fermeId) {        java.util.Map<String, Object> kpis = new java.util.LinkedHashMap<>();
+    public java.util.Map<String, Object> dashboard(Long fermeId) {
+        java.util.Map<String, Object> kpis = new java.util.LinkedHashMap<>();
         kpis.put("fermeId", fermeId);
         kpis.put("avgNesVivantsParPortee",
                 profilPorcinRepository.avgNesVivantsParPorteeByFerme(fermeId));
@@ -375,7 +380,8 @@ public class PorcinService {
                             && p.getAnimal().getStructure().getSite().getFerme() != null
                             && p.getAnimal().getStructure().getSite().getFerme().getId().equals(fermeId))
                     .count();
-            if (count > 0) parStatut.put(s.name(), count);
+            if (count > 0)
+                parStatut.put(s.name(), count);
         }
         kpis.put("truiesParStatut", parStatut);
         kpis.put("truiesDisponiblesSaillie",
@@ -383,11 +389,15 @@ public class PorcinService {
         return kpis;
     }
 
-    /** Construit la réponse complète d'un porcin. Accessible depuis ExtractionBandeService. */
+    /**
+     * Construit la réponse complète d'un porcin. Accessible depuis
+     * ExtractionBandeService.
+     */
     public PorcinResponse toResponse(Animal animal) {
         ProfilPorcin profil = profilPorcinRepository.findByAnimalId(animal.getId()).orElse(null);
         int ageJours = animal.getDateNaissance() != null
-                ? (int) ChronoUnit.DAYS.between(animal.getDateNaissance(), LocalDate.now()) : 0;
+                ? (int) ChronoUnit.DAYS.between(animal.getDateNaissance(), LocalDate.now())
+                : 0;
 
         return new PorcinResponse(
                 animal.getId(),
@@ -406,7 +416,8 @@ public class PorcinService {
                 animal.getStructure() != null ? animal.getStructure().getId() : null,
                 animal.getStructure() != null ? animal.getStructure().getNom() : null,
                 animal.getStructure() != null && animal.getStructure().getSite() != null
-                        ? animal.getStructure().getSite().getNom() : null,
+                        ? animal.getStructure().getSite().getNom()
+                        : null,
                 animal.getProvenance(),
                 animal.getFournisseurNom(),
                 animal.getPrixUnitaire(),
@@ -423,13 +434,14 @@ public class PorcinService {
                 profil != null ? profil.getDateRetourChaleurEstimee() : null,
                 null, // saillieActive — enrichi par SaillieService si besoin
                 profil != null && profil.getBandeOrigine() != null
-                        ? profil.getBandeOrigine().getId() : null,
+                        ? profil.getBandeOrigine().getId()
+                        : null,
                 profil != null && profil.getBandeOrigine() != null
-                        ? profil.getBandeOrigine().getNom() : null,
+                        ? profil.getBandeOrigine().getNom()
+                        : null,
                 profil != null ? profil.getDateExtractionBande() : null,
                 profil != null ? profil.getPoidsSelectionKg() : null,
-                animal.getDateCreation()
-        );
+                animal.getDateCreation());
     }
 
     private String genererCodeUnique() {

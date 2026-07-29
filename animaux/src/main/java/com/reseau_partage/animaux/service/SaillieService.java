@@ -1,17 +1,28 @@
 package com.reseau_partage.animaux.service;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.reseau_partage.animaux.dto.saillie.SaillieConfirmationRequest;
 import com.reseau_partage.animaux.dto.saillie.SaillieRequest;
 import com.reseau_partage.animaux.dto.saillie.SaillieResponse;
 import com.reseau_partage.animaux.exception.ResourceNotFoundException;
-import com.reseau_partage.core.entities.*;
-import com.reseau_partage.core.repository.*;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
+import com.reseau_partage.core.entities.Animal;
+import com.reseau_partage.core.entities.Espece;
+import com.reseau_partage.core.entities.ProfilPorcin;
+import com.reseau_partage.core.entities.Saillie;
+import com.reseau_partage.core.entities.Sexe;
+import com.reseau_partage.core.entities.StatutAnimal;
+import com.reseau_partage.core.entities.StatutReproductifPorcin;
+import com.reseau_partage.core.entities.StatutSaillie;
+import com.reseau_partage.core.repository.AnimalRepository;
+import com.reseau_partage.core.repository.ConfigEspeceRepository;
+import com.reseau_partage.core.repository.ProfilPorcinRepository;
+import com.reseau_partage.core.repository.SaillieRepository;
 
 @Service
 public class SaillieService {
@@ -29,11 +40,11 @@ public class SaillieService {
     private final ConfigEspeceRepository configEspeceRepository;
 
     public SaillieService(SaillieRepository saillieRepository,
-                          AnimalRepository animalRepository,
-                          ProfilPorcinRepository profilPorcinRepository,
-                          ConfigEspeceRepository configEspeceRepository) {
-        this.saillieRepository      = saillieRepository;
-        this.animalRepository       = animalRepository;
+            AnimalRepository animalRepository,
+            ProfilPorcinRepository profilPorcinRepository,
+            ConfigEspeceRepository configEspeceRepository) {
+        this.saillieRepository = saillieRepository;
+        this.animalRepository = animalRepository;
         this.profilPorcinRepository = profilPorcinRepository;
         this.configEspeceRepository = configEspeceRepository;
     }
@@ -61,7 +72,7 @@ public class SaillieService {
                 && statut != StatutReproductifPorcin.COCHETTE) {
             throw new IllegalArgumentException(
                     "La truie (id=" + request.truieId() + ", statut=" + statut + ") ne peut pas être saillie. "
-                    + "Statuts autorisés : EN_ATTENTE_SAILLIE, EN_CHALEUR, COCHETTE.");
+                            + "Statuts autorisés : EN_ATTENTE_SAILLIE, EN_CHALEUR, COCHETTE.");
         }
 
         // Verrat optionnel
@@ -82,10 +93,10 @@ public class SaillieService {
         // Numérotation carrière
         long nbSaillies = saillieRepository.countByTruieId(request.truieId());
         int numeroSaillie = (int) nbSaillies + 1;
-        int numeroPortee  = profil.getNbPorteesTotal() + 1;
+        int numeroPortee = profil.getNbPorteesTotal() + 1;
 
         // Dates calculées
-        LocalDate dateMiseBasPrevue     = request.dateSaillie().plusDays(dureeGestation);
+        LocalDate dateMiseBasPrevue = request.dateSaillie().plusDays(dureeGestation);
         LocalDate dateTransfertMaternite = dateMiseBasPrevue.minusDays(JOURS_AVANT_TERME_MATERNITE);
 
         Saillie saillie = new Saillie();
@@ -123,7 +134,7 @@ public class SaillieService {
         if (saillie.getStatut() != StatutSaillie.EN_ATTENTE) {
             throw new IllegalArgumentException(
                     "Impossible de confirmer la saillie id=" + saillieId + " : statut actuel=" + saillie.getStatut()
-                    + ". Seules les saillies EN_ATTENTE peuvent être confirmées.");
+                            + ". Seules les saillies EN_ATTENTE peuvent être confirmées.");
         }
 
         ProfilPorcin profil = profilPorcinRepository.findByAnimalId(saillie.getTruie().getId())
@@ -149,10 +160,11 @@ public class SaillieService {
         } else {
             throw new IllegalArgumentException(
                     "Statut invalide pour la confirmation de la saillie id=" + saillieId + " : " + request.statut()
-                    + ". Attendu : CONFIRMEE ou ECHEC.");
+                            + ". Attendu : CONFIRMEE ou ECHEC.");
         }
 
-        if (request.notes() != null) saillie.setNotes(request.notes());
+        if (request.notes() != null)
+            saillie.setNotes(request.notes());
         saillieRepository.save(saillie);
         profilPorcinRepository.save(profil);
         return toResponse(saillie);
@@ -170,7 +182,8 @@ public class SaillieService {
         }
 
         saillie.setStatut(StatutSaillie.AVORTEMENT);
-        if (notes != null) saillie.setNotes(notes);
+        if (notes != null)
+            saillie.setNotes(notes);
         saillieRepository.save(saillie);
 
         ProfilPorcin profil = profilPorcinRepository.findByAnimalId(saillie.getTruie().getId())
@@ -198,7 +211,7 @@ public class SaillieService {
         List<SaillieResponse> saillies = saillieRepository
                 .findByVerratIdOrderByDateSaillieDesc(verratId)
                 .stream().map(this::toResponse).toList();
-        long reussies  = saillieRepository.countSailliesReussiesByVerrat(verratId);
+        long reussies = saillieRepository.countSailliesReussiesByVerrat(verratId);
         long terminees = saillieRepository.countSailliesTerminesByVerrat(verratId);
         double taux = terminees > 0 ? (double) reussies / terminees * 100 : 0;
         return Map.of(
@@ -206,8 +219,7 @@ public class SaillieService {
                 "totalSaillies", saillies.size(),
                 "sailliesReussies", reussies,
                 "tauxFertilitePct", Math.round(taux * 10.0) / 10.0,
-                "saillies", saillies
-        );
+                "saillies", saillies);
     }
 
     /** Saillies en attente d'écho dont le J+28 est dépassé. */
@@ -240,7 +252,6 @@ public class SaillieService {
                 s.getSemenceFournisseur(),
                 s.getOperateurNom(),
                 s.getNotes(),
-                s.getDateCreation()
-        );
+                s.getDateCreation());
     }
 }

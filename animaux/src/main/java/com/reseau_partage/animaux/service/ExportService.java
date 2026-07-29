@@ -43,15 +43,16 @@ public class ExportService {
 
     @Transactional(readOnly = true)
     public byte[] exporterListeCSV(Espece espece, StatutAnimal statut, ModeSuivi modeSuivi,
-                                    Long structureId, Long siteId, Long fermeId, Long bandeId,
-                                    Sexe sexe, Integer ageMinJours, Integer ageMaxJours,
-                                    java.math.BigDecimal poidsMinKg, java.math.BigDecimal poidsMaxKg,
-                                    LocalDate dateEntreeDebut, LocalDate dateEntreeFin) {
+            Long structureId, Long siteId, Long fermeId, Long bandeId,
+            Sexe sexe, Integer ageMinJours, Integer ageMaxJours,
+            java.math.BigDecimal poidsMinKg, java.math.BigDecimal poidsMaxKg,
+            LocalDate dateEntreeDebut, LocalDate dateEntreeFin) {
         List<Animal> animaux = rechercher(espece, statut, modeSuivi, structureId, siteId, fermeId, bandeId,
                 sexe, ageMinJours, ageMaxJours, poidsMinKg, poidsMaxKg, dateEntreeDebut, dateEntreeFin);
         try (StringWriter sw = new StringWriter();
-             CSVPrinter printer = new CSVPrinter(sw, CSVFormat.DEFAULT
-                     .withHeader("codeUnique", "espece", "race", "sexe", "statut", "structure", "dateEntree", "poidsActuelKg"))) {
+                CSVPrinter printer = new CSVPrinter(sw, CSVFormat.DEFAULT
+                        .withHeader("codeUnique", "espece", "race", "sexe", "statut", "structure", "dateEntree",
+                                "poidsActuelKg"))) {
             for (Animal a : animaux) {
                 printer.printRecord(
                         a.getCodeUnique(),
@@ -74,11 +75,11 @@ public class ExportService {
         if (!animalRepository.existsById(animalId)) {
             throw new ResourceNotFoundException("Animal", animalId);
         }
-            java.util.Map<String, Object> bilan = auditService.bilanVie(animalId);
+        java.util.Map<String, Object> bilan = auditService.bilanVie(animalId);
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             PdfWriter writer = new PdfWriter(baos);
-             PdfDocument pdf = new PdfDocument(writer);
-             Document document = new Document(pdf)) {
+                PdfWriter writer = new PdfWriter(baos);
+                PdfDocument pdf = new PdfDocument(writer);
+                Document document = new Document(pdf)) {
             document.add(new Paragraph("Bilan de vie - Animal #" + animalId));
             Animal animal = (Animal) bilan.get("animal");
             if (animal != null) {
@@ -106,41 +107,55 @@ public class ExportService {
 
     @Transactional(readOnly = true)
     public List<AnimalResponse> rechercheAvancee(Espece espece, StatutAnimal statut, ModeSuivi modeSuivi,
-                                                 Long structureId, Long siteId, Long fermeId, Long bandeId,
-                                                 Sexe sexe, Integer ageMinJours, Integer ageMaxJours,
-                                                 java.math.BigDecimal poidsMinKg, java.math.BigDecimal poidsMaxKg,
-                                                 LocalDate dateEntreeDebut, LocalDate dateEntreeFin) {
+            Long structureId, Long siteId, Long fermeId, Long bandeId,
+            Sexe sexe, Integer ageMinJours, Integer ageMaxJours,
+            java.math.BigDecimal poidsMinKg, java.math.BigDecimal poidsMaxKg,
+            LocalDate dateEntreeDebut, LocalDate dateEntreeFin) {
         return rechercher(espece, statut, modeSuivi, structureId, siteId, fermeId, bandeId,
                 sexe, ageMinJours, ageMaxJours, poidsMinKg, poidsMaxKg, dateEntreeDebut, dateEntreeFin)
                 .stream().map(animalService::toResponsePublic).toList();
     }
 
     private List<Animal> rechercher(Espece espece, StatutAnimal statut, ModeSuivi modeSuivi,
-                                    Long structureId, Long siteId, Long fermeId, Long bandeId,
-                                    Sexe sexe, Integer ageMinJours, Integer ageMaxJours,
-                                    java.math.BigDecimal poidsMinKg, java.math.BigDecimal poidsMaxKg,
-                                    LocalDate dateEntreeDebut, LocalDate dateEntreeFin) {
+            Long structureId, Long siteId, Long fermeId, Long bandeId,
+            Sexe sexe, Integer ageMinJours, Integer ageMaxJours,
+            java.math.BigDecimal poidsMinKg, java.math.BigDecimal poidsMaxKg,
+            LocalDate dateEntreeDebut, LocalDate dateEntreeFin) {
         LocalDate aujourdHui = LocalDate.now();
         return animalRepository.findAll().stream().filter(a -> {
-            if (espece != null && a.getEspece() != espece) return false;
-            if (statut != null && a.getStatut() != statut) return false;
-            if (modeSuivi != null && a.getModeSuivi() != modeSuivi) return false;
-            if (sexe != null && a.getSexe() != sexe) return false;
-            if (structureId != null && (a.getStructure() == null || !a.getStructure().getId().equals(structureId))) return false;
-            if (bandeId != null && (a.getBande() == null || !a.getBande().getId().equals(bandeId))) return false;
+            if (espece != null && a.getEspece() != espece)
+                return false;
+            if (statut != null && a.getStatut() != statut)
+                return false;
+            if (modeSuivi != null && a.getModeSuivi() != modeSuivi)
+                return false;
+            if (sexe != null && a.getSexe() != sexe)
+                return false;
+            if (structureId != null && (a.getStructure() == null || !a.getStructure().getId().equals(structureId)))
+                return false;
+            if (bandeId != null && (a.getBande() == null || !a.getBande().getId().equals(bandeId)))
+                return false;
             if (siteId != null && (a.getStructure() == null || a.getStructure().getSite() == null
-                    || !a.getStructure().getSite().getId().equals(siteId))) return false;
+                    || !a.getStructure().getSite().getId().equals(siteId)))
+                return false;
             if (fermeId != null && (a.getStructure() == null || a.getStructure().getSite() == null
                     || a.getStructure().getSite().getFerme() == null
-                    || !a.getStructure().getSite().getFerme().getId().equals(fermeId))) return false;
+                    || !a.getStructure().getSite().getFerme().getId().equals(fermeId)))
+                return false;
             if (a.getDateNaissance() != null && ageMinJours != null
-                    && java.time.temporal.ChronoUnit.DAYS.between(a.getDateNaissance(), aujourdHui) < ageMinJours) return false;
+                    && java.time.temporal.ChronoUnit.DAYS.between(a.getDateNaissance(), aujourdHui) < ageMinJours)
+                return false;
             if (a.getDateNaissance() != null && ageMaxJours != null
-                    && java.time.temporal.ChronoUnit.DAYS.between(a.getDateNaissance(), aujourdHui) > ageMaxJours) return false;
-            if (poidsMinKg != null && (a.getPoidsActuelKg() == null || a.getPoidsActuelKg().compareTo(poidsMinKg) < 0)) return false;
-            if (poidsMaxKg != null && (a.getPoidsActuelKg() == null || a.getPoidsActuelKg().compareTo(poidsMaxKg) > 0)) return false;
-            if (dateEntreeDebut != null && (a.getDateEntree() == null || a.getDateEntree().isBefore(dateEntreeDebut))) return false;
-            if (dateEntreeFin != null && (a.getDateEntree() == null || a.getDateEntree().isAfter(dateEntreeFin))) return false;
+                    && java.time.temporal.ChronoUnit.DAYS.between(a.getDateNaissance(), aujourdHui) > ageMaxJours)
+                return false;
+            if (poidsMinKg != null && (a.getPoidsActuelKg() == null || a.getPoidsActuelKg().compareTo(poidsMinKg) < 0))
+                return false;
+            if (poidsMaxKg != null && (a.getPoidsActuelKg() == null || a.getPoidsActuelKg().compareTo(poidsMaxKg) > 0))
+                return false;
+            if (dateEntreeDebut != null && (a.getDateEntree() == null || a.getDateEntree().isBefore(dateEntreeDebut)))
+                return false;
+            if (dateEntreeFin != null && (a.getDateEntree() == null || a.getDateEntree().isAfter(dateEntreeFin)))
+                return false;
             return true;
         }).toList();
     }

@@ -32,9 +32,9 @@ public class LogeService {
     private final AnimalRepository animalRepository;
 
     public LogeService(LogeRepository logeRepository,
-                       StructureRepository structureRepository,
-                       BandeRepository bandeRepository,
-                       AnimalRepository animalRepository) {
+            StructureRepository structureRepository,
+            BandeRepository bandeRepository,
+            AnimalRepository animalRepository) {
         this.logeRepository = logeRepository;
         this.structureRepository = structureRepository;
         this.bandeRepository = bandeRepository;
@@ -102,10 +102,13 @@ public class LogeService {
     }
 
     /**
-     * Récupère les données d'une loge existante pour pré-remplir un nouveau formulaire.
-     * Le code est préfixé avec "COP-" (doit être modifié par l'utilisateur pour rester unique).
+     * Récupère les données d'une loge existante pour pré-remplir un nouveau
+     * formulaire.
+     * Le code est préfixé avec "COP-" (doit être modifié par l'utilisateur pour
+     * rester unique).
      * Le nom est préfixé avec "Copie - ".
-     * La bande et les animaux affectés ne sont PAS renvoyés pour éviter les conflits.
+     * La bande et les animaux affectés ne sont PAS renvoyés pour éviter les
+     * conflits.
      */
     @Transactional(readOnly = true)
     public LogeRequest duplicate(Long logeId) {
@@ -121,7 +124,7 @@ public class LogeService {
                 loge.getSuperficieM2(),
                 loge.getBatiment().getId(),
                 null, // bande non incluse : doit être réaffectée
-                null  // animaux non inclus : doivent être réaffectés
+                null // animaux non inclus : doivent être réaffectés
         );
     }
 
@@ -138,7 +141,7 @@ public class LogeService {
         if (effectif > loge.getCapaciteMaxAnimaux()) {
             throw new IllegalArgumentException(
                     "L'effectif de la bande (" + effectif +
-                    ") dépasse la capacité maximale de la loge (" + loge.getCapaciteMaxAnimaux() + ").");
+                            ") dépasse la capacité maximale de la loge (" + loge.getCapaciteMaxAnimaux() + ").");
         }
 
         loge.setBande(bande);
@@ -178,8 +181,8 @@ public class LogeService {
         if (countActuels + animauxIds.size() > loge.getCapaciteMaxAnimaux()) {
             throw new IllegalArgumentException(
                     "L'ajout de ces animaux dépasse la capacité maximale de la loge (" +
-                    loge.getCapaciteMaxAnimaux() + "). Animaux actuellement : " + countActuels +
-                    ", Tentative d'ajout : " + animauxIds.size());
+                            loge.getCapaciteMaxAnimaux() + "). Animaux actuellement : " + countActuels +
+                            ", Tentative d'ajout : " + animauxIds.size());
         }
 
         for (Long animalId : animauxIds) {
@@ -188,7 +191,7 @@ public class LogeService {
             if (animal.getStatut() != StatutAnimal.ACTIF) {
                 throw new IllegalArgumentException(
                         "Impossible d'affecter l'animal id=" + animalId +
-                        " : son statut est " + animal.getStatut() + " (seul ACTIF est autorisé).");
+                                " : son statut est " + animal.getStatut() + " (seul ACTIF est autorisé).");
             }
             animal.setLoge(loge);
             animalRepository.save(animal);
@@ -223,7 +226,7 @@ public class LogeService {
         if (!(s instanceof Batiment batiment)) {
             throw new IllegalArgumentException(
                     "La structure id=" + structureId + " n'est pas un bâtiment (" +
-                    (s != null ? s.getClass().getSimpleName() : "null") + ").");
+                            (s != null ? s.getClass().getSimpleName() : "null") + ").");
         }
         return batiment;
     }
@@ -259,7 +262,8 @@ public class LogeService {
         List<Animal> animaux = animalRepository.findByLogeId(loge.getId());
         long countAnimaux = animaux.size();
         int countBande = (loge.getBande() != null && loge.getBande().getEffectifActuel() != null)
-                ? loge.getBande().getEffectifActuel() : 0;
+                ? loge.getBande().getEffectifActuel()
+                : 0;
         int total = (int) Math.max(countAnimaux, countBande);
         Integer capacite = loge.getCapaciteMaxAnimaux();
         Double taux = (capacite == null || capacite == 0) ? null : (total * 100.0 / capacite);
@@ -269,9 +273,11 @@ public class LogeService {
         Long siteId = batiment.getSite() != null ? batiment.getSite().getId() : null;
         String siteNom = batiment.getSite() != null ? batiment.getSite().getNom() : null;
         Long fermeId = batiment.getSite() != null && batiment.getSite().getFerme() != null
-                ? batiment.getSite().getFerme().getId() : null;
+                ? batiment.getSite().getFerme().getId()
+                : null;
         String fermeNom = batiment.getSite() != null && batiment.getSite().getFerme() != null
-                ? batiment.getSite().getFerme().getNom() : null;
+                ? batiment.getSite().getFerme().getNom()
+                : null;
 
         return new LogeResponse(
                 loge.getId(),
@@ -293,8 +299,7 @@ public class LogeService {
                 animaux.stream().map(this::animalSummary).toList(),
                 taux,
                 loge.getDateCreation(),
-                loge.getDateModification()
-        );
+                loge.getDateModification());
     }
 
     private Map<String, Object> animalSummary(Animal animal) {

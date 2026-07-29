@@ -28,8 +28,8 @@ public class AlerteService {
     private final MouvementAnimalRepository mouvementRepository;
 
     public AlerteService(PeseeService peseeService, ReproductionService reproductionService,
-                         BandeRepository bandeRepository, ConfigEspeceRepository configEspeceRepository,
-                         MouvementAnimalRepository mouvementRepository) {
+            BandeRepository bandeRepository, ConfigEspeceRepository configEspeceRepository,
+            MouvementAnimalRepository mouvementRepository) {
         this.peseeService = peseeService;
         this.reproductionService = reproductionService;
         this.bandeRepository = bandeRepository;

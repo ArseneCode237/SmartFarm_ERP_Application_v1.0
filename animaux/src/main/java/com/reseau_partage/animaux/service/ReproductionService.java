@@ -39,9 +39,10 @@ public class ReproductionService {
     private final MouvementAnimalRepository mouvementRepository;
     private final EvenementReproductionMapper mapper;
 
-    public ReproductionService(EvenementReproductionRepository reproductionRepository, AnimalRepository animalRepository,
-                               ConfigEspeceRepository configEspeceRepository, MouvementAnimalRepository mouvementRepository,
-                               EvenementReproductionMapper mapper) {
+    public ReproductionService(EvenementReproductionRepository reproductionRepository,
+            AnimalRepository animalRepository,
+            ConfigEspeceRepository configEspeceRepository, MouvementAnimalRepository mouvementRepository,
+            EvenementReproductionMapper mapper) {
         this.reproductionRepository = reproductionRepository;
         this.animalRepository = animalRepository;
         this.configEspeceRepository = configEspeceRepository;
@@ -112,7 +113,8 @@ public class ReproductionService {
             throw new IllegalArgumentException("Une mise-bas a deja ete declaree pour cet evenement.");
         }
         Animal femelle = evenement.getFemelle();
-        evenement.setDateMiseBasReelle(request.dateMiseBasReelle() != null ? request.dateMiseBasReelle() : LocalDate.now());
+        evenement.setDateMiseBasReelle(
+                request.dateMiseBasReelle() != null ? request.dateMiseBasReelle() : LocalDate.now());
         evenement.setNombreNesVivants(request.nombreNesVivants());
         evenement.setNombreNesMorts(request.nombreNesMorts());
         evenement.setPoidsMoyenNaissanceKg(request.poidsMoyenNaissanceKg());
@@ -191,7 +193,8 @@ public class ReproductionService {
         try {
             nouveau = StatutReproducteur.valueOf(statut.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new StatutReproducteurInvalideException("Statut reproducteur invalide : '" + statut + "'. Valeurs acceptées : " + java.util.Arrays.toString(StatutReproducteur.values()));
+            throw new StatutReproducteurInvalideException("Statut reproducteur invalide : '" + statut
+                    + "'. Valeurs acceptées : " + java.util.Arrays.toString(StatutReproducteur.values()));
         }
         animal.setStatutReproducteur(nouveau);
         animalRepository.save(animal);

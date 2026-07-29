@@ -49,8 +49,8 @@ public class OrganisationService {
   private final AnimalRepository animalRepository;
 
   public OrganisationService(FermeRepository fermes, SiteRepository sites,
-                             StructureRepository structures, UtilisateurRepository utilisateurs,
-                             AnimalRepository animalRepository) {
+      StructureRepository structures, UtilisateurRepository utilisateurs,
+      AnimalRepository animalRepository) {
     this.fermes = fermes;
     this.sites = sites;
     this.structures = structures;
@@ -282,16 +282,15 @@ public class OrganisationService {
     }
 
     return new StructureRequest(
-      s.getSite().getId(), nomCopie, t, s.getDescription(), s.getSuperficieM2(),
-      s.getLatitude(), s.getLongitude(),
-      capaciteMaxAnimaux, typeVentilation, dureeVideSanitaireJours, nombreRangees, systemeAbreuvement,
-      typeCloture, accesEau, especesCompatibles,
-      volumeM3, profondeurM, systemeAeration, temperatureCibleCelsius, phCible,
-      capaciteTonnes, temperatureControlee, temperatureMinCelsius, temperatureMaxCelsius,
-      typeSol, cultureActuelle, systemeIrrigation, coordonneesPolygone,
-      typeProduction, systemeChauffage,
-      systemeEvacuation, nombreCases
-    );
+        s.getSite().getId(), nomCopie, t, s.getDescription(), s.getSuperficieM2(),
+        s.getLatitude(), s.getLongitude(),
+        capaciteMaxAnimaux, typeVentilation, dureeVideSanitaireJours, nombreRangees, systemeAbreuvement,
+        typeCloture, accesEau, especesCompatibles,
+        volumeM3, profondeurM, systemeAeration, temperatureCibleCelsius, phCible,
+        capaciteTonnes, temperatureControlee, temperatureMinCelsius, temperatureMaxCelsius,
+        typeSol, cultureActuelle, systemeIrrigation, coordonneesPolygone,
+        typeProduction, systemeChauffage,
+        systemeEvacuation, nombreCases);
   }
 
   public Map<String, Object> updateStructure(Long id, StructureRequest r) {
@@ -323,18 +322,19 @@ public class OrganisationService {
   @Transactional(readOnly = true)
   public Map<String, Object> occupancy(Long id) {
     Structure s = getStructureEntity(id);
-    Integer capacity = s instanceof Batiment b   ? b.getCapaciteMaxAnimaux()
-                     : s instanceof Enclos e      ? e.getCapaciteMaxAnimaux()
-                     : s instanceof Poulailler p  ? p.getCapaciteMaxAnimaux()
-                     : s instanceof Porcherie pc  ? pc.getCapaciteMaxAnimaux()
-                     : null;
+    Integer capacity = s instanceof Batiment b ? b.getCapaciteMaxAnimaux()
+        : s instanceof Enclos e ? e.getCapaciteMaxAnimaux()
+            : s instanceof Poulailler p ? p.getCapaciteMaxAnimaux()
+                : s instanceof Porcherie pc ? pc.getCapaciteMaxAnimaux()
+                    : null;
     long animauxPresents = animalRepository.countByStructureId(id);
     Map<String, Object> out = new LinkedHashMap<>();
     out.put("structureId", id);
     out.put("typeStructure", type(s));
     out.put("capaciteMaxAnimaux", capacity);
     out.put("animauxPresents", animauxPresents);
-    out.put("tauxOccupation", capacity == null ? null : (capacity == 0 ? 0 : (double) animauxPresents * 100 / capacity));
+    out.put("tauxOccupation",
+        capacity == null ? null : (capacity == 0 ? 0 : (double) animauxPresents * 100 / capacity));
     out.put("niveauAlerte", capacity != null && animauxPresents >= capacity ? "ALERTE" : null);
     return out;
   }
@@ -368,23 +368,26 @@ public class OrganisationService {
     f.setEmailContact(r.emailContact());
     f.setLocalisation(r.localisation());
     f.setTypeActivite(normalizeAndValidate(r.typeActivite(),
-            Set.of("agriculture", "elevage", "aviculture", "pisciculture"), "activite"));
+        Set.of("agriculture", "elevage", "aviculture", "pisciculture"), "activite"));
     f.setTypeService(normalizeAndValidate(r.typeService(),
-            Set.of("stock", "vaccination", "comptabilite", "maintenance", "videosurveillance"), "service"));
+        Set.of("stock", "vaccination", "comptabilite", "maintenance", "videosurveillance"), "service"));
   }
 
-  /** Normalise et valide une liste de choix libres contre un ensemble autorisé. */
+  /**
+   * Normalise et valide une liste de choix libres contre un ensemble autorisé.
+   */
   private List<String> normalizeAndValidate(List<String> choices, Set<String> allowed, String label) {
-    if (choices == null || choices.isEmpty()) return List.of();
+    if (choices == null || choices.isEmpty())
+      return List.of();
     LinkedHashSet<String> result = new LinkedHashSet<>();
     for (String choice : choices) {
       if (choice == null || choice.isBlank())
         throw new IllegalArgumentException("Chaque " + label + " sélectionné doit être renseigné.");
       String normalized = Normalizer.normalize(choice.trim().toLowerCase(), Normalizer.Form.NFD)
-              .replaceAll("\\p{M}", "");
+          .replaceAll("\\p{M}", "");
       if (!allowed.contains(normalized))
         throw new IllegalArgumentException("Type d'" + label + " invalide : " + choice
-                + ". Valeurs acceptées : " + String.join(", ", allowed) + ".");
+            + ". Valeurs acceptées : " + String.join(", ", allowed) + ".");
       result.add(normalized);
     }
     return List.copyOf(result);
@@ -456,16 +459,16 @@ public class OrganisationService {
 
   private Structure newStructure(String value) {
     return switch (normalizeType(value)) {
-      case "BATIMENT"   -> new Batiment();
-      case "ENCLOS"     -> new Enclos();
-      case "ETANG"      -> new Etang();
-      case "ENTREPOT"   -> new Entrepot();
-      case "PARCELLE"   -> new Parcelle();
+      case "BATIMENT" -> new Batiment();
+      case "ENCLOS" -> new Enclos();
+      case "ETANG" -> new Etang();
+      case "ENTREPOT" -> new Entrepot();
+      case "PARCELLE" -> new Parcelle();
       case "POULAILLER" -> new Poulailler();
-      case "PORCHERIE"  -> new Porcherie();
+      case "PORCHERIE" -> new Porcherie();
       default -> throw new IllegalArgumentException(
           "Type de structure inconnu : " + value +
-          ". Valeurs acceptées : BATIMENT, ENCLOS, ETANG, ENTREPOT, PARCELLE, POULAILLER, PORCHERIE.");
+              ". Valeurs acceptées : BATIMENT, ENCLOS, ETANG, ENTREPOT, PARCELLE, POULAILLER, PORCHERIE.");
     };
   }
 
@@ -474,12 +477,18 @@ public class OrganisationService {
   }
 
   private String type(Structure s) {
-    if (s instanceof Batiment)   return "BATIMENT";
-    if (s instanceof Enclos)     return "ENCLOS";
-    if (s instanceof Etang)      return "ETANG";
-    if (s instanceof Entrepot)   return "ENTREPOT";
-    if (s instanceof Poulailler) return "POULAILLER";
-    if (s instanceof Porcherie)  return "PORCHERIE";
+    if (s instanceof Batiment)
+      return "BATIMENT";
+    if (s instanceof Enclos)
+      return "ENCLOS";
+    if (s instanceof Etang)
+      return "ETANG";
+    if (s instanceof Entrepot)
+      return "ENTREPOT";
+    if (s instanceof Poulailler)
+      return "POULAILLER";
+    if (s instanceof Porcherie)
+      return "PORCHERIE";
     return "PARCELLE";
   }
 

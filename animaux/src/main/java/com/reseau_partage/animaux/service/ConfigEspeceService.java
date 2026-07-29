@@ -26,8 +26,8 @@ public class ConfigEspeceService {
     private final TypeEvenementCustomRepository evenementCustomRepository;
 
     public ConfigEspeceService(ConfigEspeceRepository configEspeceRepository,
-                               CourbeCroissanceReferenceRepository courbeRepository,
-                               TypeEvenementCustomRepository evenementCustomRepository) {
+            CourbeCroissanceReferenceRepository courbeRepository,
+            TypeEvenementCustomRepository evenementCustomRepository) {
         this.configEspeceRepository = configEspeceRepository;
         this.courbeRepository = courbeRepository;
         this.evenementCustomRepository = evenementCustomRepository;
