@@ -8,8 +8,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(scanBasePackages = {"com.reseau_partage.stocks", "com.reseau_partage.core"})
-@EnableJpaRepositories(basePackages = "com.reseau_partage.core.repository")
-@EntityScan(basePackages = "com.reseau_partage.core.entities")
+@EnableJpaRepositories(basePackages = {"com.reseau_partage.core.repository", "com.reseau_partage.stocks.repository"})
+@EntityScan(basePackages = {"com.reseau_partage.core.entities", "com.reseau_partage.stocks.entities"})
 @EnableAsync
 @EnableScheduling
 public class StocksApplication {

@@ -11,6 +11,9 @@ import java.time.LocalDate;
 public class MouvementRequest {
 
     @NotNull
+    private Long fermeId;
+
+    @NotNull
     private Long articleId;
 
     @NotNull
@@ -26,7 +29,15 @@ public class MouvementRequest {
     @NotNull
     private LocalDate dateMouvement;
 
-    private BigDecimal prixUnitaire;
+    private String uniteMesure;
+
+    private String destinationOrigine;
+
+    private String fournisseurNom;
+
+    private String numeroBon;
+
+    private BigDecimal coutUnitaire;
 
     private Long fournisseurId;
 
@@ -52,9 +63,13 @@ public class MouvementRequest {
 
     private String animalCode;
 
-    private String operateurNom;
+    private String operateur;
 
     private String notes;
+
+    public Long getFermeId() { return fermeId; }
+
+    public void setFermeId(Long fermeId) { this.fermeId = fermeId; }
 
     public Long getArticleId() {
         return articleId;
@@ -96,12 +111,24 @@ public class MouvementRequest {
         this.dateMouvement = dateMouvement;
     }
 
-    public BigDecimal getPrixUnitaire() {
-        return prixUnitaire;
+    public String getUniteMesure() { return uniteMesure; }
+    public void setUniteMesure(String uniteMesure) { this.uniteMesure = uniteMesure; }
+
+    public String getDestinationOrigine() { return destinationOrigine; }
+    public void setDestinationOrigine(String destinationOrigine) { this.destinationOrigine = destinationOrigine; }
+
+    public String getFournisseurNom() { return fournisseurNom; }
+    public void setFournisseurNom(String fournisseurNom) { this.fournisseurNom = fournisseurNom; }
+
+    public String getNumeroBon() { return numeroBon; }
+    public void setNumeroBon(String numeroBon) { this.numeroBon = numeroBon; }
+
+    public BigDecimal getCoutUnitaire() {
+        return coutUnitaire;
     }
 
-    public void setPrixUnitaire(BigDecimal prixUnitaire) {
-        this.prixUnitaire = prixUnitaire;
+    public void setCoutUnitaire(BigDecimal coutUnitaire) {
+        this.coutUnitaire = coutUnitaire;
     }
 
     public Long getFournisseurId() {
@@ -168,12 +195,12 @@ public class MouvementRequest {
         this.entrepotDestinationId = entrepotDestinationId;
     }
 
-    public String getOperateurNom() {
-        return operateurNom;
+    public String getOperateur() {
+        return operateur;
     }
 
-    public void setOperateurNom(String operateurNom) {
-        this.operateurNom = operateurNom;
+    public void setOperateur(String operateur) {
+        this.operateur = operateur;
     }
 
     public String getNotes() {

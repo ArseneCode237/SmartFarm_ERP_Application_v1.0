@@ -58,6 +58,9 @@ public class MouvementStock {
     @Column(name = "numero_facture", length = 100)
     private String numeroFacture;
 
+    @Column(name = "fournisseur_nom", length = 150)
+    private String fournisseurNom;
+
     @Column(name = "numero_lot", length = 100)
     private String numeroLot;
 
@@ -197,6 +200,14 @@ public class MouvementStock {
 
     public void setNumeroFacture(String numeroFacture) {
         this.numeroFacture = numeroFacture;
+    }
+
+    public String getFournisseurNom() {
+        return fournisseurNom;
+    }
+
+    public void setFournisseurNom(String fournisseurNom) {
+        this.fournisseurNom = fournisseurNom;
     }
 
     public String getNumeroLot() {

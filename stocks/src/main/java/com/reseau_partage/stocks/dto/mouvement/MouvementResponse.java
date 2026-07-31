@@ -1,192 +1,57 @@
 package com.reseau_partage.stocks.dto.mouvement;
 
-import com.reseau_partage.core.entities.enumtypes.MotifMouvement;
-import com.reseau_partage.core.entities.enumtypes.TypeMouvementStock;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.reseau_partage.core.entities.enumtypes.MotifMouvement;
+import com.reseau_partage.core.entities.enumtypes.TypeMouvementStock;
+
 public class MouvementResponse {
-
     private Long id;
-    private Long articleId;
-    private String articleDesignation;
-    private String articleCode;
     private TypeMouvementStock typeMouvement;
-    private MotifMouvement motif;
+    private Long articleId;
+    private ArticleResume article;
     private BigDecimal quantite;
-    private BigDecimal stockAvant;
-    private BigDecimal stockApres;
-    private BigDecimal prixUnitaire;
-    private BigDecimal montantTotal;
-    private String fournisseurNom;
-    private String numeroFacture;
-    private String numeroLot;
-    private String bandeNom;
-    private String animalCode;
+    private String uniteMesure;
     private LocalDate dateMouvement;
-    private String operateurNom;
+    private MotifMouvement motif;
+    private String destinationOrigine;
+    private Long bandeId;
+    private String fournisseurNom;
+    private String numeroBon;
+    private BigDecimal coutUnitaire;
+    private BigDecimal coutTotal;
+    private String numeroLot;
+    private String operateur;
     private String notes;
+    private Long fermeId;
     private LocalDateTime dateCreation;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getArticleId() {
-        return articleId;
-    }
-
-    public void setArticleId(Long articleId) {
-        this.articleId = articleId;
-    }
-
-    public String getArticleDesignation() {
-        return articleDesignation;
-    }
-
-    public void setArticleDesignation(String articleDesignation) {
-        this.articleDesignation = articleDesignation;
-    }
-
-    public String getArticleCode() {
-        return articleCode;
-    }
-
-    public void setArticleCode(String articleCode) {
-        this.articleCode = articleCode;
-    }
-
-    public TypeMouvementStock getTypeMouvement() {
-        return typeMouvement;
-    }
-
-    public void setTypeMouvement(TypeMouvementStock typeMouvement) {
-        this.typeMouvement = typeMouvement;
-    }
-
-    public MotifMouvement getMotif() {
-        return motif;
-    }
-
-    public void setMotif(MotifMouvement motif) {
-        this.motif = motif;
-    }
-
-    public BigDecimal getQuantite() {
-        return quantite;
-    }
-
-    public void setQuantite(BigDecimal quantite) {
-        this.quantite = quantite;
-    }
-
-    public BigDecimal getStockAvant() {
-        return stockAvant;
-    }
-
-    public void setStockAvant(BigDecimal stockAvant) {
-        this.stockAvant = stockAvant;
-    }
-
-    public BigDecimal getStockApres() {
-        return stockApres;
-    }
-
-    public void setStockApres(BigDecimal stockApres) {
-        this.stockApres = stockApres;
-    }
-
-    public BigDecimal getPrixUnitaire() {
-        return prixUnitaire;
-    }
-
-    public void setPrixUnitaire(BigDecimal prixUnitaire) {
-        this.prixUnitaire = prixUnitaire;
-    }
-
-    public BigDecimal getMontantTotal() {
-        return montantTotal;
-    }
-
-    public void setMontantTotal(BigDecimal montantTotal) {
-        this.montantTotal = montantTotal;
-    }
-
-    public String getFournisseurNom() {
-        return fournisseurNom;
-    }
-
-    public void setFournisseurNom(String fournisseurNom) {
-        this.fournisseurNom = fournisseurNom;
-    }
-
-    public String getNumeroFacture() {
-        return numeroFacture;
-    }
-
-    public void setNumeroFacture(String numeroFacture) {
-        this.numeroFacture = numeroFacture;
-    }
-
-    public String getNumeroLot() {
-        return numeroLot;
-    }
-
-    public void setNumeroLot(String numeroLot) {
-        this.numeroLot = numeroLot;
-    }
-
-    public String getBandeNom() {
-        return bandeNom;
-    }
-
-    public void setBandeNom(String bandeNom) {
-        this.bandeNom = bandeNom;
-    }
-
-    public String getAnimalCode() {
-        return animalCode;
-    }
-
-    public void setAnimalCode(String animalCode) {
-        this.animalCode = animalCode;
-    }
-
-    public LocalDate getDateMouvement() {
-        return dateMouvement;
-    }
-
-    public void setDateMouvement(LocalDate dateMouvement) {
-        this.dateMouvement = dateMouvement;
-    }
-
-    public String getOperateurNom() {
-        return operateurNom;
-    }
-
-    public void setOperateurNom(String operateurNom) {
-        this.operateurNom = operateurNom;
-    }
-
-    public String getNotes() {
-        return notes;
-    }
-
-    public void setNotes(String notes) {
-        this.notes = notes;
-    }
-
-    public LocalDateTime getDateCreation() {
-        return dateCreation;
-    }
-
-    public void setDateCreation(LocalDateTime dateCreation) {
-        this.dateCreation = dateCreation;
+    public Long getId() { return id; } public void setId(Long id) { this.id = id; }
+    public TypeMouvementStock getTypeMouvement() { return typeMouvement; } public void setTypeMouvement(TypeMouvementStock v) { typeMouvement = v; }
+    public Long getArticleId() { return articleId; } public void setArticleId(Long v) { articleId = v; }
+    public ArticleResume getArticle() { return article; } public void setArticle(ArticleResume v) { article = v; }
+    public BigDecimal getQuantite() { return quantite; } public void setQuantite(BigDecimal v) { quantite = v; }
+    public String getUniteMesure() { return uniteMesure; } public void setUniteMesure(String v) { uniteMesure = v; }
+    public LocalDate getDateMouvement() { return dateMouvement; } public void setDateMouvement(LocalDate v) { dateMouvement = v; }
+    public MotifMouvement getMotif() { return motif; } public void setMotif(MotifMouvement v) { motif = v; }
+    public String getDestinationOrigine() { return destinationOrigine; } public void setDestinationOrigine(String v) { destinationOrigine = v; }
+    public Long getBandeId() { return bandeId; } public void setBandeId(Long v) { bandeId = v; }
+    public String getFournisseurNom() { return fournisseurNom; } public void setFournisseurNom(String v) { fournisseurNom = v; }
+    public String getNumeroBon() { return numeroBon; } public void setNumeroBon(String v) { numeroBon = v; }
+    public BigDecimal getCoutUnitaire() { return coutUnitaire; } public void setCoutUnitaire(BigDecimal v) { coutUnitaire = v; }
+    public BigDecimal getCoutTotal() { return coutTotal; } public void setCoutTotal(BigDecimal v) { coutTotal = v; }
+    public String getNumeroLot() { return numeroLot; } public void setNumeroLot(String v) { numeroLot = v; }
+    public String getOperateur() { return operateur; } public void setOperateur(String v) { operateur = v; }
+    public String getNotes() { return notes; } public void setNotes(String v) { notes = v; }
+    public Long getFermeId() { return fermeId; } public void setFermeId(Long v) { fermeId = v; }
+    public LocalDateTime getDateCreation() { return dateCreation; } public void setDateCreation(LocalDateTime v) { dateCreation = v; }
+    public static class ArticleResume {
+        private Long id; private String nom; private String reference;
+        public ArticleResume() { }
+        public ArticleResume(Long id, String nom, String reference) { this.id = id; this.nom = nom; this.reference = reference; }
+        public Long getId() { return id; } public void setId(Long v) { id = v; }
+        public String getNom() { return nom; } public void setNom(String v) { nom = v; }
+        public String getReference() { return reference; } public void setReference(String v) { reference = v; }
     }
 }

@@ -1,13 +1,12 @@
 package com.reseau_partage.stocks.controller;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.reseau_partage.core.entities.enumtypes.TypeMouvementStock;
 import com.reseau_partage.stocks.dto.mouvement.MouvementRequest;
 import com.reseau_partage.stocks.dto.mouvement.MouvementResponse;
 import com.reseau_partage.stocks.service.MouvementStockService;
@@ -25,49 +25,34 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/stocks/mouvements")
 public class MouvementStockController {
+    private final MouvementStockService service;
+    public MouvementStockController(MouvementStockService service) { this.service = service; }
 
-    private final MouvementStockService mouvementStockService;
+    @GetMapping
+    public org.springframework.data.domain.Page<MouvementResponse> lister(@RequestParam Long fermeId, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size, @RequestParam(defaultValue = "dateMouvement,desc") String sort,
+            @RequestParam(required = false) Long articleId, @RequestParam(required = false) TypeMouvementStock type,
+            @RequestParam(required = false) LocalDate dateDebut, @RequestParam(required = false) LocalDate dateFin, @RequestParam(required = false) String search) {
+        return service.lister(fermeId, articleId, type, dateDebut, dateFin, search, pageable(page, size, sort));
+    }
 
-    public MouvementStockController(MouvementStockService mouvementStockService) {
-        this.mouvementStockService = mouvementStockService;
+    @GetMapping("/article/{articleId}")
+    public org.springframework.data.domain.Page<MouvementResponse> historique(@PathVariable Long articleId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return service.historiqueArticle(articleId, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "dateMouvement")));
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> enregistrer(@Valid @RequestBody MouvementRequest request, Authentication authentication) {
-        MouvementResponse response = mouvementStockService.enregistrerMouvement(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("data", response, "message", "Mouvement enregistre avec succes."));
+    public ResponseEntity<MouvementResponse> enregistrer(@Valid @RequestBody MouvementRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.enregistrerMouvement(request));
     }
 
-    @GetMapping("/article/{id}")
-    public ResponseEntity<Map<String, Object>> historique(@PathVariable Long id, org.springframework.data.domain.Pageable pageable) {
-        var page = mouvementStockService.historiqueArticle(id, pageable);
-        return ResponseEntity.ok(Map.of("content", page.getContent(), "totalElements", page.getTotalElements(), "totalPages", page.getTotalPages()));
+    @GetMapping("/statistiques")
+    public MouvementStockService.MouvementStatistiques statistiques(@RequestParam Long fermeId, @RequestParam(required = false) LocalDate dateDebut, @RequestParam(required = false) LocalDate dateFin) {
+        return service.statistiques(fermeId, dateDebut, dateFin);
     }
 
-    @GetMapping("/ferme/{fermeId}")
-    public ResponseEntity<Map<String, Object>> parFerme(@PathVariable Long fermeId,
-            @RequestParam(required = false) LocalDate debut,
-            @RequestParam(required = false) LocalDate fin,
-            org.springframework.data.domain.Pageable pageable) {
-        var page = mouvementStockService.mouvementsParFerme(fermeId, debut, fin, pageable);
-        return ResponseEntity.ok(Map.of("content", page.getContent(), "totalElements", page.getTotalElements(), "totalPages", page.getTotalPages()));
-    }
-
-    @GetMapping("/bande/{bandeId}")
-    public ResponseEntity<Map<String, Object>> parBande(@PathVariable Long bandeId) {
-        return ResponseEntity.ok(Map.of("content", mouvementStockService.mouvementsParBande(bandeId)));
-    }
-
-    @GetMapping("/vaccination/{vaccinationId}")
-    public ResponseEntity<Map<String, Object>> parVaccination(@PathVariable Long vaccinationId) {
-        return ResponseEntity.ok(Map.of("content", mouvementStockService.mouvementsParVaccination(vaccinationId)));
-    }
-
-    @GetMapping("/stats")
-    public ResponseEntity<Map<String, Object>> stats(@RequestParam Long fermeId,
-            @RequestParam LocalDate debut,
-            @RequestParam LocalDate fin) {
-        BigDecimal depenses = mouvementStockService.depensesAchatsSurPeriode(fermeId, debut, fin);
-        return ResponseEntity.ok(Map.of("depensesAchatsTotal", depenses));
+    private Pageable pageable(int page, int size, String sort) {
+        String[] fields = sort.split(",", 2); Sort.Direction direction = fields.length == 2 && "asc".equalsIgnoreCase(fields[1]) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return PageRequest.of(page, size, Sort.by(direction, fields[0]));
     }
 }

@@ -104,7 +104,7 @@ public class ArticleService {
             mvt.setArticle(article);
             mvt.setFermeId(fermeId);
             mvt.setTypeMouvement(TypeMouvementStock.ENTREE);
-            mvt.setMotif(com.reseau_partage.core.entities.enumtypes.MotifMouvement.PRODUCTION_INTERNE);
+            mvt.setMotif(com.reseau_partage.core.entities.enumtypes.MotifMouvement.PRODUCTION);
             mvt.setQuantite(stockInitial);
             mvt.setStockAvant(BigDecimal.ZERO);
             mvt.setStockApres(stockInitial);
@@ -114,6 +114,7 @@ public class ArticleService {
             mouvementRepository.save(mvt);
         }
         mettreAJourStatut(article);
+        alerteStockService.synchroniserAlertesArticle(article.getId());
         return toResponse(article);
     }
 
@@ -175,6 +176,7 @@ public class ArticleService {
         article.setValeurStock(article.getStockActuel().multiply(article.getPrixUnitaireRef() == null ? BigDecimal.ZERO : article.getPrixUnitaireRef()));
         article = articleRepository.save(article);
         mettreAJourStatut(article);
+        alerteStockService.synchroniserAlertesArticle(article.getId());
         return toResponse(article);
     }
 
@@ -284,9 +286,6 @@ public class ArticleService {
         StatutStock nouveauStatut = calculerStatut(article);
         article.setStatut(nouveauStatut);
         articleRepository.save(article);
-        if (nouveauStatut != StatutStock.NORMAL && nouveauStatut != StatutStock.INACTIF) {
-            alerteStockService.evaluerEtEnvoyerAlertes(article);
-        }
     }
 
     private StatutStock calculerStatut(Article article) {

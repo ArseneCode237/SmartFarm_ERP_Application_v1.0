@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(StockInsuffisantException.class)
     public ResponseEntity<Map<String, Object>> stockInsuffisant(StockInsuffisantException ex, HttpServletRequest request) {
-        return buildErrorResponse(409, "Conflict", ex.getMessage(), request.getRequestURI(), HttpStatus.CONFLICT);
+        return ResponseEntity.badRequest().body(Map.of("message", "Stock insuffisant", "errors", Map.of("quantite", ex.getMessage())));
     }
 
     @ExceptionHandler(IllegalStateException.class)

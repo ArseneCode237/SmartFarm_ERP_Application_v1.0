@@ -15,7 +15,7 @@ import java.util.List;
 @Repository
 public interface MouvementStockRepository extends JpaRepository<MouvementStock, Long> {
 
-    Page<MouvementStock> findByArticleIdOrderByDateMouvementDesc(Long articleId, Pageable pageable);
+    Page<MouvementStock> findByArticleId(Long articleId, Pageable pageable);
 
     long countByArticleId(Long articleId);
 
@@ -27,8 +27,7 @@ public interface MouvementStockRepository extends JpaRepository<MouvementStock, 
         SELECT COALESCE(SUM(m.quantite), 0)
         FROM MouvementStock m
         WHERE m.article.id = :articleId
-          AND m.typeMouvement IN ('SORTIE',
-              'AJUSTEMENT_NEGATIF','TRANSFERT_SORTIE')
+          AND m.typeMouvement IN ('SORTIE', 'PERTE')
           AND m.dateMouvement BETWEEN :debut AND :fin
         """)
     BigDecimal findConsommationSurPeriode(
@@ -64,4 +63,6 @@ public interface MouvementStockRepository extends JpaRepository<MouvementStock, 
     List<MouvementStock> findByBandeIdOrderByDateMouvementDesc(Long bandeId);
 
     List<MouvementStock> findByVaccinationId(Long vaccinationId);
+
+    List<MouvementStock> findByFermeId(Long fermeId);
 }
