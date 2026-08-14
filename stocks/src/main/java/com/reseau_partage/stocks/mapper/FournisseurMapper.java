@@ -5,7 +5,7 @@ import com.reseau_partage.core.entities.Fournisseur;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "default", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface FournisseurMapper {
 
     FournisseurResponse toResponse(Fournisseur entity);
