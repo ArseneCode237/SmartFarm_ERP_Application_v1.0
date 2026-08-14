@@ -57,6 +57,7 @@ public class ArticleService {
         Map<String, Object> entrepot = request.getEntrepotId() == null ? null : organisationClient.getEntrepot(request.getEntrepotId());
         if (request.getEntrepotId() != null && entrepot == null) throw new ResourceNotFoundException("Entrepot", request.getEntrepotId());
         if (request.getFermeId() == null) throw new IllegalArgumentException("fermeId est obligatoire.");
+        verifierEntrepot(request.getEntrepotId(), request.getFermeId(), entrepot);
         String entrepotNom = entrepot != null ? (String) entrepot.get("nom") : request.getEntrepot();
         Long fermeId = request.getFermeId() != null ? request.getFermeId() : extractFermeIdFromEntrepot(entrepot);
         String codeArticle = request.getCodeArticle() == null || request.getCodeArticle().isBlank()
@@ -423,6 +424,8 @@ public class ArticleService {
     }
 
     private Long extractFermeIdFromEntrepot(Map<String, Object> entrepot) {
+        Object fermeId = entrepot.get("fermeId");
+        if (fermeId instanceof Number number) return number.longValue();
         Object siteObj = entrepot.get("site");
         if (siteObj instanceof Map) {
             @SuppressWarnings("unchecked")
@@ -441,6 +444,8 @@ public class ArticleService {
     }
 
     private Long extractSiteId(Map<String, Object> entrepot) {
+        Object siteId = entrepot.get("siteId");
+        if (siteId instanceof Number number) return number.longValue();
         Object siteObj = entrepot.get("site");
         if (siteObj instanceof Map) {
             @SuppressWarnings("unchecked")
@@ -454,6 +459,8 @@ public class ArticleService {
     }
 
     private String extractSiteNom(Map<String, Object> entrepot) {
+        Object siteNom = entrepot.get("siteNom");
+        if (siteNom instanceof String value) return value;
         Object siteObj = entrepot.get("site");
         if (siteObj instanceof Map) {
             @SuppressWarnings("unchecked")
@@ -461,5 +468,19 @@ public class ArticleService {
             return (String) site.get("nom");
         }
         return null;
+    }
+
+    private void verifierEntrepot(Long entrepotId, Long fermeId, Map<String, Object> entrepot) {
+        if (entrepotId == null) return;
+        if (!"ENTREPOT".equals(entrepot.get("typeStructure"))) {
+            throw new IllegalArgumentException("La structure id=" + entrepotId + " n'est pas un entrepot.");
+        }
+        if (!"ACTIF".equals(entrepot.get("statut"))) {
+            throw new IllegalArgumentException("L'entrepot id=" + entrepotId + " n'est pas actif.");
+        }
+        Long fermeEntrepot = extractFermeIdFromEntrepot(entrepot);
+        if (fermeEntrepot == null || !fermeId.equals(fermeEntrepot)) {
+            throw new IllegalArgumentException("L'entrepot id=" + entrepotId + " n'appartient pas a la ferme indiquee.");
+        }
     }
 }
