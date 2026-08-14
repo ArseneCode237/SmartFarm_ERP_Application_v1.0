@@ -51,6 +51,16 @@ public class StructureController {
     }
 
     /**
+     * GET /api/organisation/structures/ferme/{fermeId}/entrepots
+     * Liste les entrepots actifs d'une ferme. Cette route est notamment
+     * consommee par le module Stocks pour proposer les emplacements valides.
+     */
+    @GetMapping("/ferme/{fermeId}/entrepots")
+    public ResponseEntity<List<Map<String, Object>>> listEntrepotsByFerme(@PathVariable Long fermeId) {
+        return ResponseEntity.ok(service.listEntrepotsForFerme(fermeId));
+    }
+
+    /**
      * GET /api/organisation/structures/{id}
      * Détail d'une structure (champs communs + attributs spécifiques selon le
      * type).
