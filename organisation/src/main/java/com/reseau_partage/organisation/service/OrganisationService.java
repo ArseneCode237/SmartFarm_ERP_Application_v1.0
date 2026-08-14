@@ -201,6 +201,16 @@ public class OrganisationService {
   }
 
   @Transactional(readOnly = true)
+  public List<Map<String, Object>> listEntrepotsForFerme(Long fermeId) {
+    getFermeEntity(fermeId);
+    return structures.findBySiteFermeId(fermeId).stream()
+        .filter(Entrepot.class::isInstance)
+        .filter(structure -> structure.getStatut() == StatutStructure.ACTIF)
+        .map(this::structure)
+        .toList();
+  }
+
+  @Transactional(readOnly = true)
   public Map<String, Object> getStructure(Long id) {
     return structure(getStructureEntity(id));
   }
@@ -560,6 +570,8 @@ public class OrganisationService {
     m.put("id", s.getId());
     m.put("siteId", s.getSite().getId());
     m.put("siteNom", s.getSite().getNom());
+    m.put("fermeId", s.getSite().getFerme().getId());
+    m.put("fermeNom", s.getSite().getFerme().getNom());
     m.put("nom", s.getNom());
     m.put("typeStructure", type(s));
     m.put("description", s.getDescription());
