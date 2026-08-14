@@ -20,10 +20,15 @@ import com.reseau_partage.stocks.mapper.BonCommandeMapper;
 import com.reseau_partage.core.entities.BonCommande;
 import com.reseau_partage.core.entities.LigneBonCommande;
 import com.reseau_partage.core.entities.Article;
+import com.reseau_partage.core.entities.MouvementStock;
 import com.reseau_partage.core.entities.enumtypes.StatutBonCommande;
+import com.reseau_partage.core.entities.enumtypes.StatutStock;
+import com.reseau_partage.core.entities.enumtypes.TypeMouvementStock;
+import com.reseau_partage.core.entities.enumtypes.MotifMouvement;
 import com.reseau_partage.core.repository.ArticleRepository;
 import com.reseau_partage.core.repository.BonCommandeRepository;
 import com.reseau_partage.core.repository.FournisseurRepository;
+import com.reseau_partage.core.repository.MouvementStockRepository;
 
 @Service
 public class BonCommandeService {
@@ -31,13 +36,17 @@ public class BonCommandeService {
     private final BonCommandeRepository bonCommandeRepository;
     private final FournisseurRepository fournisseurRepository;
     private final ArticleRepository articleRepository;
+    private final MouvementStockRepository mouvementStockRepository;
     private final BonCommandeMapper bonCommandeMapper;
+    private final AlerteStockService alerteStockService;
 
-    public BonCommandeService(BonCommandeRepository bonCommandeRepository, FournisseurRepository fournisseurRepository, ArticleRepository articleRepository, BonCommandeMapper bonCommandeMapper) {
+    public BonCommandeService(BonCommandeRepository bonCommandeRepository, FournisseurRepository fournisseurRepository, ArticleRepository articleRepository, MouvementStockRepository mouvementStockRepository, BonCommandeMapper bonCommandeMapper, AlerteStockService alerteStockService) {
         this.bonCommandeRepository = bonCommandeRepository;
         this.fournisseurRepository = fournisseurRepository;
         this.articleRepository = articleRepository;
+        this.mouvementStockRepository = mouvementStockRepository;
         this.bonCommandeMapper = bonCommandeMapper;
+        this.alerteStockService = alerteStockService;
     }
 
     @Transactional
@@ -136,12 +145,82 @@ public class BonCommandeService {
             throw new IllegalArgumentException("Bon de commande deja " + bc.getStatut().name());
         }
 
+        LocalDate today = LocalDate.now();
+
         for (LigneBonCommandeRequest ligneReq : lignesRecues) {
             LigneBonCommande ligneBC = bc.getLignes().stream()
                     .filter(l -> l.getArticle().getId().equals(ligneReq.getArticleId()))
                     .findFirst()
                     .orElseThrow(() -> new ResourceNotFoundException("LigneBonCommande", ligneReq.getArticleId()));
-            ligneBC.setQuantiteRecue(ligneReq.getQuantiteRecue());
+
+            BigDecimal ancienneRecue = ligneBC.getQuantiteRecue() == null ? BigDecimal.ZERO : ligneBC.getQuantiteRecue();
+            BigDecimal nouvelleRecue = ligneReq.getQuantiteRecue() == null ? BigDecimal.ZERO : ligneReq.getQuantiteRecue();
+            BigDecimal delta = nouvelleRecue.subtract(ancienneRecue);
+
+            if (delta.compareTo(BigDecimal.ZERO) < 0) {
+                throw new IllegalArgumentException("La quantite recue ne peut pas etre inferieure a la quantite deja recue pour l'article id=" + ligneReq.getArticleId());
+            }
+
+            ligneBC.setQuantiteRecue(nouvelleRecue);
+
+            if (delta.compareTo(BigDecimal.ZERO) > 0) {
+                Article article = ligneBC.getArticle();
+
+                BigDecimal stockAvant = article.getStockActuel();
+                BigDecimal stockApres = stockAvant.add(delta);
+
+                if (article.getStockMax() != null && stockApres.compareTo(article.getStockMax()) > 0) {
+                    throw new IllegalArgumentException("Le stock apres reception depasserait le maximum autorise pour l'article id=" + article.getId());
+                }
+
+                BigDecimal prixUnitaireReel = ligneReq.getPrixUnitaireReel();
+                if (prixUnitaireReel == null) {
+                    prixUnitaireReel = ligneReq.getPrixUnitaire();
+                }
+                if (prixUnitaireReel == null) {
+                    prixUnitaireReel = ligneBC.getPrixUnitaire();
+                }
+
+                MouvementStock mvt = new MouvementStock();
+                mvt.setArticle(article);
+                mvt.setFermeId(bc.getFermeId());
+                mvt.setTypeMouvement(TypeMouvementStock.ENTREE);
+                mvt.setMotif(MotifMouvement.ACHAT);
+                mvt.setQuantite(delta);
+                mvt.setStockAvant(stockAvant);
+                mvt.setStockApres(stockApres);
+                mvt.setPrixUnitaire(prixUnitaireReel);
+                if (prixUnitaireReel != null) {
+                    mvt.setMontantTotal(prixUnitaireReel.multiply(delta));
+                }
+                if (bc.getFournisseur() != null) {
+                    mvt.setFournisseur(bc.getFournisseur());
+                    mvt.setFournisseurNom(bc.getFournisseur().getNom());
+                }
+                mvt.setNumeroFacture(bc.getNumeroBc());
+                mvt.setNumeroLot(ligneReq.getNumeroLot());
+                mvt.setDatePeremptionLot(ligneReq.getDatePeremptionLot());
+                mvt.setDateMouvement(today);
+                mvt.setNotes("Reception bon de commande " + bc.getNumeroBc());
+                mouvementStockRepository.save(mvt);
+
+                article.setStockActuel(stockApres);
+                if (prixUnitaireReel != null) {
+                    article.setPrixUnitaireRef(prixUnitaireReel);
+                }
+                article.setValeurStock(stockApres.multiply(article.getPrixUnitaireRef() == null ? BigDecimal.ZERO : article.getPrixUnitaireRef()));
+                article.setDateDerniereEntree(today);
+                if (ligneReq.getNumeroLot() != null) {
+                    article.setNumeroLot(ligneReq.getNumeroLot());
+                }
+                if (ligneReq.getDatePeremptionLot() != null) {
+                    article.setDatePeremption(ligneReq.getDatePeremptionLot());
+                }
+                article.setStatut(calculerStatutArticle(article));
+                articleRepository.save(article);
+
+                alerteStockService.synchroniserAlertesArticle(article.getId());
+            }
         }
 
         boolean toutesRecues = true;
@@ -152,9 +231,29 @@ public class BonCommandeService {
             }
         }
         bc.setStatut(toutesRecues ? StatutBonCommande.RECU : StatutBonCommande.PARTIELLEMENT_RECU);
-        bc.setDateLivraisonReelle(LocalDate.now());
+        bc.setDateLivraisonReelle(today);
         bc = bonCommandeRepository.save(bc);
         return enrichirResponse(bc);
+    }
+
+    private StatutStock calculerStatutArticle(Article article) {
+        if (Boolean.FALSE.equals(article.getActif())) {
+            return StatutStock.INACTIF;
+        }
+        if (article.getDatePeremption() != null && !LocalDate.now().isBefore(article.getDatePeremption())) {
+            return StatutStock.PERIME;
+        }
+        if (article.getStockActuel().compareTo(BigDecimal.ZERO) == 0) {
+            return StatutStock.RUPTURE;
+        }
+        if (article.getSeuilAlerteCritique() != null
+                && article.getStockActuel().compareTo(article.getSeuilAlerteCritique()) <= 0) {
+            return StatutStock.CRITIQUE;
+        }
+        if (article.getStockActuel().compareTo(article.getSeuilAlerteMin()) <= 0) {
+            return StatutStock.FAIBLE;
+        }
+        return StatutStock.NORMAL;
     }
 
     @Transactional
