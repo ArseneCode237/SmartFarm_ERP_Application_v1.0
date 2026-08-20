@@ -164,7 +164,8 @@ public class BonCommandeService {
             ligneBC.setQuantiteRecue(nouvelleRecue);
 
             if (delta.compareTo(BigDecimal.ZERO) > 0) {
-                Article article = ligneBC.getArticle();
+                Article article = articleRepository.findByIdPessimisticWrite(ligneBC.getArticle().getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Article", ligneBC.getArticle().getId()));
 
                 BigDecimal stockAvant = article.getStockActuel();
                 BigDecimal stockApres = stockAvant.add(delta);

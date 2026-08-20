@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.reseau_partage.core.entities.enumtypes.TypeMouvementStock;
+import com.reseau_partage.stocks.dto.mouvement.AjustementStockRequest;
 import com.reseau_partage.stocks.dto.mouvement.MouvementRequest;
 import com.reseau_partage.stocks.dto.mouvement.MouvementResponse;
 import com.reseau_partage.stocks.service.MouvementStockService;
@@ -44,6 +45,11 @@ public class MouvementStockController {
     @PostMapping
     public ResponseEntity<MouvementResponse> enregistrer(@Valid @RequestBody MouvementRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.enregistrerMouvement(request));
+    }
+
+    @PostMapping("/ajustement")
+    public ResponseEntity<MouvementResponse> ajusterInventaire(@Valid @RequestBody AjustementStockRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.ajusterStockInventaire(request));
     }
 
     @GetMapping("/statistiques")

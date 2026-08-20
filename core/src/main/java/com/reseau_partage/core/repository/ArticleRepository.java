@@ -3,7 +3,9 @@ package com.reseau_partage.core.repository;
 import com.reseau_partage.core.entities.Article;
 import com.reseau_partage.core.entities.enumtypes.CategorieArticle;
 import com.reseau_partage.core.entities.enumtypes.StatutStock;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -27,6 +29,14 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     List<Article> findByFermeIdAndCategorieAndActifTrue(Long fermeId, CategorieArticle categorie);
 
     List<Article> findByEntrepotId(Long entrepotId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT a FROM Article a WHERE a.id = :id")
+    Optional<Article> findByIdPessimisticWrite(@Param("id") Long id);
+
+    @Lock(LockModeType.PESSIMISTIC_READ)
+    @Query("SELECT a FROM Article a WHERE a.id = :id")
+    Optional<Article> findByIdPessimisticRead(@Param("id") Long id);
 
     @Query("""
         SELECT a FROM Article a

@@ -147,7 +147,7 @@ public class ArticleService {
 
     @Transactional
     public ArticleResponse mettreAJourArticle(Long id, ArticleRequest request) {
-        Article article = articleRepository.findById(id)
+        Article article = articleRepository.findByIdPessimisticWrite(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Article", id));
         article.setDesignation(request.getDesignation());
         article.setDescription(request.getDescription());
@@ -183,7 +183,7 @@ public class ArticleService {
 
     @Transactional
     public ArticleResponse desactiverArticle(Long id) {
-        Article article = articleRepository.findById(id)
+        Article article = articleRepository.findByIdPessimisticWrite(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Article", id));
         article.setActif(false);
         article.setStatut(StatutStock.INACTIF);
@@ -193,7 +193,7 @@ public class ArticleService {
 
     @Transactional
     public void supprimerArticle(Long id) {
-        Article article = articleRepository.findById(id)
+        Article article = articleRepository.findByIdPessimisticWrite(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Article", id));
         long mouvements = mouvementRepository.countByArticleId(id);
         if (mouvements > 0) throw new IllegalStateException("Impossible a supprimer : " + mouvements + " mouvements associes");

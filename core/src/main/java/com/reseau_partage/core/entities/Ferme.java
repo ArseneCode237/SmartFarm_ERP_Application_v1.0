@@ -42,7 +42,7 @@ public class Ferme {
     @Column(name = "superficie_totale", precision = 10, scale = 4)
     private BigDecimal superficieTotale;
 
-    @Column(name = "logo_url")
+    @Column(name = "logo_url", columnDefinition = "TEXT")
     private String logoUrl;
 
     @Column(name = "telephone_contact", length = 20)
