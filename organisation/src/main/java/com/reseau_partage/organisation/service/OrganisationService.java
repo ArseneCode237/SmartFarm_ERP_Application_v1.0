@@ -303,6 +303,54 @@ public class OrganisationService {
         systemeEvacuation, nombreCases);
   }
 
+  /**
+   * Récupère les données d'une ferme existante pour pré-remplir un nouveau formulaire.
+   * Le nom est préfixé avec "Copie - " pour indiquer clairement la duplication.
+   * Aucun ID ni propriétaire n'est renvoyé : ces valeurs devront être (re)définies à la création.
+   */
+  @Transactional(readOnly = true)
+  public FermeRequest duplicateFerme(Long id) {
+    Ferme f = getFermeEntity(id);
+    String nomCopie = "Copie - " + f.getNom();
+    return new FermeRequest(
+        nomCopie,
+        f.getPays(),
+        f.getDevise(),
+        f.getFuseauHoraire(),
+        f.getSuperficieTotale(),
+        f.getLogoUrl(),
+        f.getTelephoneContact(),
+        f.getEmailContact(),
+        f.getLocalisation(),
+        f.getTypeActivite(),
+        f.getTypeService()
+    );
+  }
+
+  /**
+   * Récupère les données d'un site existant pour pré-remplir un nouveau formulaire.
+   * Le nom est préfixé avec "Copie - " pour indiquer clairement la duplication.
+   * Le site reste rattaché à la même ferme (modifiable si besoin).
+   * Aucun ID n'est renvoyé : il sera généré à la création.
+   */
+  @Transactional(readOnly = true)
+  public SiteRequest duplicateSite(Long id) {
+    Site s = getSiteEntity(id);
+    String nomCopie = "Copie - " + s.getNom();
+    return new SiteRequest(
+        s.getFerme().getId(),
+        nomCopie,
+        s.getAdresse(),
+        s.getVille(),
+        s.getRegion(),
+        s.getLatitude(),
+        s.getLongitude(),
+        s.getSuperficie(),
+        s.getResponsableNom(),
+        s.getResponsableTelephone()
+    );
+  }
+
   public Map<String, Object> updateStructure(Long id, StructureRequest r) {
     Structure s = getStructureEntity(id);
     if (!type(s).equals(normalizeType(r.typeStructure())))
