@@ -86,6 +86,7 @@ public class SecurityConfig {
                                 "http://localhost:*",
                                 "http://127.0.0.1:*",
                                 "http://192.168.1.*:*",
+                                "http://192.168.10.*:*",
                                 "http://0.0.0.0:*"));
                 configuration.setAllowedMethods(
                                 Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
