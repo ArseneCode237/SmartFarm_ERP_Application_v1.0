@@ -104,17 +104,35 @@ public class LogeService {
     /**
      * Récupère les données d'une loge existante pour pré-remplir un nouveau
      * formulaire.
-     * Le code est préfixé avec "COP-" (doit être modifié par l'utilisateur pour
-     * rester unique).
-     * Le nom est préfixé avec "Copie - ".
+     * Le code est généré automatiquement et est garanti unique :
+     *   - 1re duplication : COP-{codeOriginal}
+     *   - 2e duplication  : COP-2-{codeOriginal}
+     *   - 3e duplication  : COP-3-{codeOriginal}
+     *   - etc.
+     * Le nom est préfixé avec "Copie - " (et un compteur si nécessaire).
      * La bande et les animaux affectés ne sont PAS renvoyés pour éviter les
      * conflits.
      */
     @Transactional(readOnly = true)
     public LogeRequest duplicate(Long logeId) {
         Loge loge = getLogeEntity(logeId);
-        String nomCopie = "Copie - " + loge.getNom();
-        String codeCopie = "COP-" + loge.getCode();
+        String baseCode = loge.getCode();
+        String baseNom = loge.getNom();
+
+        String codeCopie = genererCodeCopieUnique(baseCode);
+
+        String nomCopie = "Copie - " + baseNom;
+        if (!codeCopie.equals("COP-" + baseCode)) {
+            int tiretIndex = codeCopie.indexOf("-", "COP-".length());
+            if (tiretIndex > 0) {
+                String numero = codeCopie.substring("COP-".length(), tiretIndex);
+                try {
+                    Integer.parseInt(numero);
+                    nomCopie = "Copie " + numero + " - " + baseNom;
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
 
         return new LogeRequest(
                 codeCopie,
@@ -123,9 +141,34 @@ public class LogeService {
                 loge.getCapaciteMaxAnimaux(),
                 loge.getSuperficieM2(),
                 loge.getBatiment().getId(),
-                null, // bande non incluse : doit être réaffectée
-                null // animaux non inclus : doivent être réaffectés
+                null,
+                null
         );
+    }
+
+    /**
+     * Génère un code de copie unique en incrémentant un compteur si nécessaire.
+     * Exemple : LOGE-7-7942
+     *   → 1re duplication : COP-LOGE-7-7942
+     *   → 2e duplication  : COP-2-LOGE-7-7942
+     *   → 3e duplication  : COP-3-LOGE-7-7942 ...
+     * En cas d'épuisement du compteur, fallback sur un timestamp pour garantir l'unicité.
+     */
+    private String genererCodeCopieUnique(String baseCode) {
+        String proposition = "COP-" + baseCode;
+        if (!logeRepository.existsByCode(proposition)) {
+            return proposition;
+        }
+        int compteur = 2;
+        int maxTentatives = 99999;
+        while (compteur <= maxTentatives) {
+            proposition = "COP-" + compteur + "-" + baseCode;
+            if (!logeRepository.existsByCode(proposition)) {
+                return proposition;
+            }
+            compteur++;
+        }
+        return "COP-" + System.currentTimeMillis() + "-" + baseCode;
     }
 
     /**
