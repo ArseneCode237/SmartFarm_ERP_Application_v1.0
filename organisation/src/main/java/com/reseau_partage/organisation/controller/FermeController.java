@@ -120,4 +120,15 @@ public class FermeController {
     public ResponseEntity<Map<String, Object>> stats(@PathVariable Long id) {
         return ResponseEntity.ok(service.fermeStats(id));
     }
+
+    /**
+     * GET /api/organisation/fermes/{id}/duplicate
+     * Récupère les données d'une ferme existante pour pré-remplir un nouveau formulaire.
+     * Le nom est préfixé avec "Copie - " pour indiquer clairement la duplication.
+     * Aucun ID ni propriétaire n'est renvoyé : ces valeurs devront être (re)définies à la création.
+     */
+    @GetMapping("/{id}/duplicate")
+    public ResponseEntity<FermeRequest> duplicate(@PathVariable Long id) {
+        return ResponseEntity.ok(service.duplicateFerme(id));
+    }
 }
