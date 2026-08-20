@@ -182,7 +182,6 @@ public class SiteImportExportService {
             Sheet sheet = wb.createSheet("Sites");
             DataValidationHelper dvHelper = sheet.getDataValidationHelper();
             CellStyle headerStyle = headerStyle(wb);
-            CellStyle commentStyle = commentStyle(wb);
 
             Row headerRow = sheet.createRow(0);
             for (int i = 0; i < TEMPLATE_HEADERS.length; i++) {
@@ -191,18 +190,13 @@ public class SiteImportExportService {
                 c.setCellStyle(headerStyle);
             }
 
-            Row commentRow = sheet.createRow(1);
-            Cell c1 = commentRow.createCell(TEMPLATE_COL_NOM);
-            c1.setCellValue("Champ obligatoire");
-            c1.setCellStyle(commentStyle);
-            for (int i = 1; i < TEMPLATE_HEADERS.length; i++) {
-                commentRow.createCell(i).setCellStyle(commentStyle);
-            }
+            // Les données commencent à la ligne 2 — pas de ligne de commentaire
+            // (elle ferait perdre la 1re ligne saisie par l'utilisateur à l'import)
 
             DataValidationConstraint nonVide = dvHelper.createCustomConstraint(
                     "LEN(TRIM($A$2:$A$1048576))>0");
             CellRangeAddressList range = new CellRangeAddressList(
-                    2, 1048575, TEMPLATE_COL_NOM, TEMPLATE_COL_NOM);
+                    1, 1048575, TEMPLATE_COL_NOM, TEMPLATE_COL_NOM);
             DataValidation validation = dvHelper.createValidation(nonVide, range);
             validation.setEmptyCellAllowed(false);
             validation.setShowErrorBox(true);
@@ -304,7 +298,7 @@ public class SiteImportExportService {
             while (rowIt.hasNext()) {
                 rowNum++;
                 Row row = rowIt.next();
-                if (rowNum == 1 || rowNum == 2) continue;
+                if (rowNum == 1) continue;
                 String[] ligne = rowToStringArray(row);
                 if (isEmptyRow(ligne)) continue;
                 total++;
@@ -442,15 +436,6 @@ public class SiteImportExportService {
         s.setBorderTop(BorderStyle.THIN);
         s.setBorderLeft(BorderStyle.THIN);
         s.setBorderRight(BorderStyle.THIN);
-        return s;
-    }
-
-    private CellStyle commentStyle(Workbook wb) {
-        CellStyle s = wb.createCellStyle();
-        Font f = wb.createFont();
-        f.setColor(IndexedColors.GREY_50_PERCENT.getIndex());
-        f.setItalic(true);
-        s.setFont(f);
         return s;
     }
 

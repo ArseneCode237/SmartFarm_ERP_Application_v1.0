@@ -50,35 +50,57 @@ public class ApiExceptionHandler {
     /**
      * Attrape les violations de contraintes PostgreSQL (unique, check, length…)
      * et retourne un message lisible plutôt qu'un 500 générique.
+     *
+     * La détection s'appuie d'abord sur le code SQLState (indépendant de la langue
+     * du serveur), puis en secours sur le texte du message (français ou anglais).
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException e,
             HttpServletRequest request) {
         log.error("Violation de contrainte base de données : {}", e.getMostSpecificCause().getMessage());
 
-        String cause = e.getMostSpecificCause().getMessage();
-        String message;
-
-        if (cause != null && cause.contains("too long")) {
-            message = "Une valeur saisie est trop longue pour le champ correspondant.";
-        } else if (cause != null && cause.contains("unique") || cause != null && cause.contains("already exists")) {
-            message = "Cette valeur existe déjà en base de données.";
-        } else if (cause != null && cause.contains("check constraint")) {
-            message = "Une valeur ne respecte pas les contraintes définies.";
-        } else if (cause != null && cause.contains("not-null") || cause != null && cause.contains("null value")) {
-            message = "Un champ obligatoire est manquant.";
-        } else {
-            message = "Erreur de cohérence des données. Vérifiez les valeurs saisies.";
-        }
+        Throwable cause = e.getMostSpecificCause();
+        String sqlState = cause instanceof java.sql.SQLException se ? se.getSQLState() : null;
+        String message = switch (sqlState == null ? "" : sqlState) {
+            case "22001", "22003" -> "Une valeur saisie est trop longue pour le champ correspondant.";
+            case "23505" -> "Cette valeur existe déjà en base de données.";
+            case "23514" -> "Une valeur ne respecte pas les contraintes définies.";
+            case "23502" -> "Un champ obligatoire est manquant.";
+            case "23503" -> "Une valeur saisie ne correspond à aucun élément existant.";
+            default -> fromCauseText(cause);
+        };
 
         return error(HttpStatus.UNPROCESSABLE_ENTITY, message, request);
+    }
+
+    private String fromCauseText(Throwable cause) {
+        String text = cause == null ? null : cause.getMessage();
+        if (text == null)
+            return "Erreur de cohérence des données. Vérifiez les valeurs saisies.";
+        String lower = text.toLowerCase();
+        if (lower.contains("too long") || lower.contains("trop longue") || lower.contains("out of range"))
+            return "Une valeur saisie est trop longue pour le champ correspondant.";
+        if (lower.contains("unique") || lower.contains("already exists") || lower.contains("existe déjà") || lower.contains("dupliquée") || lower.contains("duplicate"))
+            return "Cette valeur existe déjà en base de données.";
+        if (lower.contains("check constraint") || lower.contains("contrainte de contrôle") || lower.contains("contrainte de verification"))
+            return "Une valeur ne respecte pas les contraintes définies.";
+        if (lower.contains("not-null") || lower.contains("null value") || lower.contains("non-nullité") || lower.contains("non-nullite"))
+            return "Un champ obligatoire est manquant.";
+        return "Erreur de cohérence des données. Vérifiez les valeurs saisies.";
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception e,
             HttpServletRequest request) {
         log.error("Erreur inattendue sur {} {} : {}", request.getMethod(), request.getRequestURI(), e.getMessage(), e);
-        return error(HttpStatus.INTERNAL_SERVER_ERROR, "Une erreur interne est survenue.", request);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        body.put("error", HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+        body.put("message", "Une erreur interne est survenue.");
+        body.put("exception", e.getClass().getName() + ": " + (e.getMessage() == null ? "" : e.getMessage()));
+        body.put("path", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 
     private ResponseEntity<Map<String, Object>> error(HttpStatus status, String message,

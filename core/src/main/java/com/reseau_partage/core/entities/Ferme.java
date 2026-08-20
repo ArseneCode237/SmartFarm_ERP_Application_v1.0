@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -42,7 +45,8 @@ public class Ferme {
     @Column(name = "superficie_totale", precision = 10, scale = 4)
     private BigDecimal superficieTotale;
 
-    @Column(name = "logo_url", columnDefinition = "TEXT")
+    @JdbcTypeCode(SqlTypes.LONGVARCHAR)
+    @Column(name = "logo_url")
     private String logoUrl;
 
     @Column(name = "telephone_contact", length = 20)
