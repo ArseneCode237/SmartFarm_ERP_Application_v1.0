@@ -87,4 +87,16 @@ public class SiteController {
     public ResponseEntity<Map<String, Object>> stats(@PathVariable Long id) {
         return ResponseEntity.ok(service.siteStats(id));
     }
+
+    /**
+     * GET /api/organisation/sites/{id}/duplicate
+     * Récupère les données d'un site existant pour pré-remplir un nouveau formulaire.
+     * Le nom est préfixé avec "Copie - " pour indiquer clairement la duplication.
+     * Le site reste rattaché à la même ferme (modifiable si besoin).
+     * Aucun ID n'est renvoyé : il sera généré à la création.
+     */
+    @GetMapping("/{id}/duplicate")
+    public ResponseEntity<SiteRequest> duplicate(@PathVariable Long id) {
+        return ResponseEntity.ok(service.duplicateSite(id));
+    }
 }
