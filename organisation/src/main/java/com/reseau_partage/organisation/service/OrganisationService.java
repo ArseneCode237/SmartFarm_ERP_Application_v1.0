@@ -61,6 +61,23 @@ public class OrganisationService {
   public Map<String, Object> createFerme(FermeRequest r, String email) {
     if (fermes.existsByNomAndPays(r.nom(), r.pays()))
       throw new ConflictException("Une ferme portant ce nom existe deja dans ce pays.");
+
+    if (r.logoUrl() != null && !r.logoUrl().isBlank()) {
+      int logoBytes = r.logoUrl().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+      int tailleMaxAutorisee = 10 * 1024 * 1024; // 10 Mo
+      if (logoBytes > tailleMaxAutorisee) {
+        throw new IllegalArgumentException(
+            "Le logo est trop volumineux (" + (logoBytes / 1024) + " Ko). " +
+            "Taille maximale autorisée : " + (tailleMaxAutorisee / 1024 / 1024) + " Mo. " +
+            "Essayez une image plus petite ou comprimée (JPEG/PNG < 10 Mo).");
+      }
+      // Validation de format basique (data URI)
+      if (r.logoUrl().startsWith("data:") && !r.logoUrl().matches("^data:image/(jpeg|png|gif|webp|svg\\+xml);base64,.*")) {
+        throw new IllegalArgumentException(
+            "Format d'image invalide dans le logo. Formats acceptés : JPEG, PNG, GIF, WEBP, SVG.");
+      }
+    }
+
     Long userId = utilisateurs.findByEmail(email)
         .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", 0L))
         .getId();
@@ -91,6 +108,20 @@ public class OrganisationService {
   }
 
   public Map<String, Object> updateFerme(Long id, FermeRequest r) {
+    if (r.logoUrl() != null && !r.logoUrl().isBlank()) {
+      int logoBytes = r.logoUrl().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+      int tailleMaxAutorisee = 10 * 1024 * 1024;
+      if (logoBytes > tailleMaxAutorisee) {
+        throw new IllegalArgumentException(
+            "Le logo est trop volumineux (" + (logoBytes / 1024) + " Ko). " +
+            "Taille maximale autorisée : " + (tailleMaxAutorisee / 1024 / 1024) + " Mo. " +
+            "Essayez une image plus petite ou comprimée (JPEG/PNG < 10 Mo).");
+      }
+      if (r.logoUrl().startsWith("data:") && !r.logoUrl().matches("^data:image/(jpeg|png|gif|webp|svg\\+xml);base64,.*")) {
+        throw new IllegalArgumentException(
+            "Format d'image invalide dans le logo. Formats acceptés : JPEG, PNG, GIF, WEBP, SVG.");
+      }
+    }
     Ferme f = getFermeEntity(id);
     apply(f, r);
     return ferme(f);
@@ -425,11 +456,30 @@ public class OrganisationService {
     f.setTelephoneContact(r.telephoneContact());
     f.setEmailContact(r.emailContact());
     f.setLocalisation(r.localisation());
-    f.setTypeActivite(normalizeAndValidate(r.typeActivite(),
-        Set.of("agriculture", "elevage", "aviculture", "pisciculture"), "activite"));
-    f.setTypeService(normalizeAndValidate(r.typeService(),
-        Set.of("stock", "vaccination", "comptabilite", "maintenance", "videosurveillance"), "service"));
+    f.setTypeActivite(normalizeAndValidate(r.typeActivite(), TYPES_ACTIVITE_AUTORISES, "activite"));
+    f.setTypeService(normalizeAndValidate(r.typeService(), TYPES_SERVICE_AUTORISES, "service"));
   }
+
+  /**
+   * Liste exhaustive des types d'activité acceptés sur une ferme.
+   * Correspond aux "ids" utilisés côté front (elevationTypes).
+   */
+  private static final Set<String> TYPES_ACTIVITE_AUTORISES = Set.of(
+      // Catégories générales (historique)
+      "agriculture", "elevage", "aviculture", "pisciculture",
+      // Élevages par espèce (front elevationTypes)
+      "bovins", "ovins", "caprins", "porcins", "volailles",
+      "lapins", "equins", "camelins", "aulacodes", "escargots",
+      "canards", "cailles", "pintades", "autruches"
+  );
+
+  /**
+   * Liste exhaustive des services optionnels sur une ferme.
+   * Normalisés (minuscules, sans accents) pour correspondre au front serviceOptions.
+   */
+  private static final Set<String> TYPES_SERVICE_AUTORISES = Set.of(
+      "stock", "vaccination", "comptabilite", "maintenance", "videosurveillance"
+  );
 
   /**
    * Normalise et valide une liste de choix libres contre un ensemble autorisé.
