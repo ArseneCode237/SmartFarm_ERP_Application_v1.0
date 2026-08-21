@@ -107,6 +107,8 @@ public class ArticleController {
     @GetMapping("/{id}/prevision")
     public ResponseEntity<Map<String, Object>> prevision(@PathVariable Long id) {
         Integer jours = articleService.getJoursStockRestants(id);
-        return ResponseEntity.ok(Map.of("data", Map.of("joursStockRestants", jours)));
+        Map<String, Object> data = new java.util.HashMap<>();
+        data.put("joursStockRestants", jours);
+        return ResponseEntity.ok(Map.of("data", data));
     }
 }

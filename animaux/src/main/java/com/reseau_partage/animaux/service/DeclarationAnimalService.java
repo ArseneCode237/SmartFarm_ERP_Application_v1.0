@@ -142,6 +142,8 @@ public class DeclarationAnimalService {
                         MotifDeclaration.PREDATEUR,
                         MotifDeclaration.CAUSE_INCONNUE,
                         MotifDeclaration.MORT_NEE,
+                        MotifDeclaration.MORT_FOETALE,
+                        MotifDeclaration.MORT_PLACENTAIRE,
                         MotifDeclaration.ASPHYXIE,
                         MotifDeclaration.CHALEUR_EXCESSIVE),
                 TypeDeclaration.VENTE, List.of(

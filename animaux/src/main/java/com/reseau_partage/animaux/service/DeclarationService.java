@@ -193,6 +193,8 @@ public class DeclarationService {
                         MotifDeclaration.CAUSE_INCONNUE,
                         MotifDeclaration.INCONNU,
                         MotifDeclaration.MORT_NEE,
+                        MotifDeclaration.MORT_FOETALE,
+                        MotifDeclaration.MORT_PLACENTAIRE,
                         MotifDeclaration.ASPHYXIE,
                         MotifDeclaration.CHALEUR_EXCESSIVE,
                         MotifDeclaration.VIEILLESSE,

@@ -8,6 +8,8 @@ package com.reseau_partage.core.entities;
     CAUSE_INCONNUE,
     INCONNU,
     MORT_NEE,
+    MORT_FOETALE,
+    MORT_PLACENTAIRE,
     ASPHYXIE,
     CHALEUR_EXCESSIVE,
     VIEILLESSE,
