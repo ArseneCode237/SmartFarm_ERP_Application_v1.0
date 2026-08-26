@@ -11,6 +11,8 @@ public record PeseeResponse(
         LocalDate datePesee,
         Integer ageJoursAuMomentPesee,
         BigDecimal poidsKg,
+        BigDecimal poidsPrecedentKg,
+        LocalDate datePeseePrecedente,
         BigDecimal gainDepuisDernierePeseeKg,
         BigDecimal gmqG,
         BigDecimal ecartCourbeReferencePct,

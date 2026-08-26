@@ -4,6 +4,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -122,6 +125,10 @@ public class Animal {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @JdbcTypeCode(SqlTypes.LONGVARCHAR)
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @Column(name = "date_derniere_declaration")
     private LocalDate dateDerniereDeclaration;
 
@@ -202,6 +209,8 @@ public class Animal {
     public void setCauseMort(String causeMort) { this.causeMort = causeMort; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public LocalDate getDateDerniereDeclaration() { return dateDerniereDeclaration; }
     public void setDateDerniereDeclaration(LocalDate dateDerniereDeclaration) { this.dateDerniereDeclaration = dateDerniereDeclaration; }
     public LocalDateTime getDateCreation() { return dateCreation; }

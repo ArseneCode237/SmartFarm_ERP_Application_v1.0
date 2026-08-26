@@ -181,10 +181,11 @@ public class LogeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Bande", bandeId));
 
         int effectif = bande.getEffectifActuel() != null ? bande.getEffectifActuel() : 0;
-        if (effectif > loge.getCapaciteMaxAnimaux()) {
+        Integer capaciteMax = loge.getCapaciteMaxAnimaux();
+        if (capaciteMax != null && effectif > capaciteMax) {
             throw new IllegalArgumentException(
                     "L'effectif de la bande (" + effectif +
-                            ") dépasse la capacité maximale de la loge (" + loge.getCapaciteMaxAnimaux() + ").");
+                            ") dépasse la capacité maximale de la loge (" + capaciteMax + ").");
         }
 
         loge.setBande(bande);

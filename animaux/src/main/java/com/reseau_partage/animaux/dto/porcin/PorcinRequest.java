@@ -38,5 +38,8 @@ public record PorcinRequest(
         Long pereId,
         Long miseBaOrigineId,
 
-        String notes
+        String notes,
+
+        // ── Image ─────────────────────────────────────────────────────────────
+        String imageUrl
 ) {}

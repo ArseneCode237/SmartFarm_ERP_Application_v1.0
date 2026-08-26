@@ -17,8 +17,6 @@ public interface BandeMapper {
     @Mapping(target = "siteNom", source = "site.nom")
     @Mapping(target = "structureId", source = "structure.id")
     @Mapping(target = "structureNom", source = "structure.nom")
-    @Mapping(target = "tauxMortalitePct", ignore = true)
-    @Mapping(target = "ageMoyenJours", ignore = true)
     @Mapping(target = "mereId", source = "mere.id")
     @Mapping(target = "mereNom", source = "mere.race")
     @Mapping(target = "mereNumeroIdentification", source = "mere.codeUnique")

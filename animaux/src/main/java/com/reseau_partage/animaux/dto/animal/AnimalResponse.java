@@ -47,6 +47,7 @@ public record AnimalResponse(
         String causeMort,
         String notes,
         LocalDateTime dateCreation,
-        LocalDateTime dateModification
+        LocalDateTime dateModification,
+        String imageUrl
 ) {
 }

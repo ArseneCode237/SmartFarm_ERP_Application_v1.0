@@ -15,6 +15,8 @@ public abstract class PeseeMapper {
                 p.getDatePesee(),
                 p.getAgeJoursAuMomentPesee(),
                 p.getPoidsKg(),
+                p.getPoidsPrecedentKg(),
+                p.getDatePeseePrecedente(),
                 p.getGainDepuisDernierePeseeKg(),
                 p.getGmqG(),
                 p.getEcartCourbeReferencePct(),

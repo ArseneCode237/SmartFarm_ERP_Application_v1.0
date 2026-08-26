@@ -64,6 +64,7 @@ public class AnimalService {
 
     @Transactional
     public AnimalResponse create(AnimalRequest request) {
+        validerImage(request.imageUrl());
         Structure structure = structureRepository.findById(request.structureId())
                 .orElseThrow(() -> new ResourceNotFoundException("Structure", request.structureId()));
         if (structure.getStatut() != StatutStructure.ACTIF) {
@@ -114,8 +115,7 @@ public class AnimalService {
             }
         }
         Animal animal = animalMapper.toEntity(request);
-        animal.setCodeUnique(genererCodeUnique(request.espece()));
-        animal.setStructure(structure);
+        animal.setCodeUnique(genererCodeUnique(request.espece()));        animal.setStructure(structure);
         animal.setStatut(StatutAnimal.ACTIF);
         if (request.modeSuivi() == ModeSuivi.BANDE && request.bandeId() != null) {
             Bande bande = bandeRepository.findById(request.bandeId()).orElseThrow();
@@ -172,18 +172,23 @@ public class AnimalService {
                 a.getFournisseurNom(),
                 a.getNumeroLotAchat(),
                 null, // dateDerniereDeclaration : remise à zéro
-                a.getNotes()
+                a.getNotes(),
+                a.getImageUrl()
         );
     }
 
     @Transactional
     public AnimalResponse update(Long id, AnimalRequest request) {
+        validerImage(request.imageUrl());
         Animal animal = animalRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Animal", id));
         animal.setRace(request.race());
         animal.setSouche(request.souche());
         animal.setNotes(request.notes());
         animal.setCodeRfid(request.codeRfid());
         animal.setCodeBoucle(request.codeBoucle());
+        if (request.imageUrl() != null) {
+            animal.setImageUrl(request.imageUrl());
+        }
         if (request.structureId() != null && !Objects.equals(request.structureId(), animal.getStructure().getId())) {
             Structure destination = structureRepository.findById(request.structureId())
                     .orElseThrow(() -> new ResourceNotFoundException("Structure", request.structureId()));
@@ -317,6 +322,22 @@ public class AnimalService {
             throw new ResourceNotFoundException("Animal", query);
         }
         return toResponse(animal);
+    }
+
+    private void validerImage(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) return;
+        int imageBytes = imageUrl.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+        int tailleMaxAutorisee = 10 * 1024 * 1024; // 10 Mo
+        if (imageBytes > tailleMaxAutorisee) {
+            throw new IllegalArgumentException(
+                "L'image est trop volumineuse (" + (imageBytes / 1024) + " Ko). " +
+                "Taille maximale autorisée : " + (tailleMaxAutorisee / 1024 / 1024) + " Mo. " +
+                "Essayez une image plus petite ou comprimée (JPEG/PNG < 10 Mo).");
+        }
+        if (imageUrl.startsWith("data:") && !imageUrl.matches("^data:image/(jpeg|png|gif|webp);base64,.*")) {
+            throw new IllegalArgumentException(
+                "Format d'image invalide. Formats acceptés : JPEG, PNG, GIF, WEBP.");
+        }
     }
 
     private String genererCodeUnique(Espece espece) {

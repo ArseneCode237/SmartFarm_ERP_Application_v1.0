@@ -4,6 +4,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -123,6 +126,10 @@ public class Bande {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @JdbcTypeCode(SqlTypes.LONGVARCHAR)
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @Column(name = "total_declares_morts")
     private Integer totalDeclaresMorts = 0;
 
@@ -229,6 +236,36 @@ public class Bande {
     public void setEffectifReformes(Integer effectifReformes) { this.effectifReformes = effectifReformes; }
     public LocalDate getDateEntree() { return dateEntree; }
     public void setDateEntree(LocalDate dateEntree) { this.dateEntree = dateEntree; }
+
+    /**
+     * Âge moyen de la bande en jours : calculé depuis la date d'entrée
+     * jusqu'à aujourd'hui (ou jusqu'à la date de sortie réelle si la bande est terminée).
+     * Champ calculé, non persisté.
+     */
+    public Integer getAgeMoyenJours() {
+        if (dateEntree == null) return 0;
+        LocalDate fin = (dateSortieReelle != null && dateSortieReelle.isAfter(dateEntree))
+                ? dateSortieReelle
+                : LocalDate.now();
+        long jours = java.time.temporal.ChronoUnit.DAYS.between(dateEntree, fin);
+        return (int) Math.max(0, jours);
+    }
+
+    /**
+     * Taux de mortalité de la bande en % : basé sur les déclarations
+     * (totalDeclaresMorts) ou sur effectifMorts si les déclarations ne sont pas utilisées.
+     * Champ calculé, non persisté.
+     */
+    public Double getTauxMortalitePct() {
+        int initial = effectifInitial != null ? effectifInitial : 0;
+        if (initial <= 0) return 0.0;
+        int morts = Math.max(
+                totalDeclaresMorts != null ? totalDeclaresMorts : 0,
+                effectifMorts != null ? effectifMorts : 0);
+        double taux = morts * 100.0 / initial;
+        return Math.round(taux * 100.0) / 100.0;
+    }
+
     public LocalDate getDateSortiePrevue() { return dateSortiePrevue; }
     public void setDateSortiePrevue(LocalDate dateSortiePrevue) { this.dateSortiePrevue = dateSortiePrevue; }
     public LocalDate getDateSortieReelle() { return dateSortieReelle; }
@@ -253,6 +290,8 @@ public class Bande {
     public void setDescription(String description) { this.description = description; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public LocalDateTime getDateCreation() { return dateCreation; }
     public LocalDateTime getDateModification() { return dateModification; }
     public void setDateModification(LocalDateTime dateModification) { this.dateModification = dateModification; }

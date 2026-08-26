@@ -66,7 +66,12 @@ public record BandeRequest(
         BigDecimal temperatureEau,
         BigDecimal phEau,
         BigDecimal oxygeneDissous,
-        String racePoisson
+        String racePoisson,
+
+        // ============================================
+        // 📷 IMAGE
+        // ============================================
+        String imageUrl
 ) {
     /**
      * Vérifie si la requête concerne des poissons

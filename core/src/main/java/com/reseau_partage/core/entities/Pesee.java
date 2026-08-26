@@ -30,6 +30,14 @@ public class Pesee {
     @Column(name = "poids_kg", precision = 8, scale = 3, nullable = false)
     private BigDecimal poidsKg;
 
+    /** Poids de la pesée précédente (même animal ou même bande). */
+    @Column(name = "poids_precedent_kg", precision = 8, scale = 3)
+    private BigDecimal poidsPrecedentKg;
+
+    /** Date de la pesée précédente. */
+    @Column(name = "date_pesee_precedente")
+    private LocalDate datePeseePrecedente;
+
     @Column(name = "gain_depuis_derniere_pesee_kg", precision = 8, scale = 3)
     private BigDecimal gainDepuisDernierePeseeKg;
 
@@ -68,6 +76,10 @@ public class Pesee {
     public void setAgeJoursAuMomentPesee(Integer ageJoursAuMomentPesee) { this.ageJoursAuMomentPesee = ageJoursAuMomentPesee; }
     public BigDecimal getPoidsKg() { return poidsKg; }
     public void setPoidsKg(BigDecimal poidsKg) { this.poidsKg = poidsKg; }
+    public BigDecimal getPoidsPrecedentKg() { return poidsPrecedentKg; }
+    public void setPoidsPrecedentKg(BigDecimal poidsPrecedentKg) { this.poidsPrecedentKg = poidsPrecedentKg; }
+    public LocalDate getDatePeseePrecedente() { return datePeseePrecedente; }
+    public void setDatePeseePrecedente(LocalDate datePeseePrecedente) { this.datePeseePrecedente = datePeseePrecedente; }
     public BigDecimal getGainDepuisDernierePeseeKg() { return gainDepuisDernierePeseeKg; }
     public void setGainDepuisDernierePeseeKg(BigDecimal gainDepuisDernierePeseeKg) { this.gainDepuisDernierePeseeKg = gainDepuisDernierePeseeKg; }
     public BigDecimal getGmqG() { return gmqG; }

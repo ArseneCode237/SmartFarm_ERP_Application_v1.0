@@ -6,11 +6,13 @@ import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.reseau_partage.animaux.dto.pesee.BilanPeseesResponse;
 import com.reseau_partage.animaux.dto.pesee.IndicateursBandeResponse;
 import com.reseau_partage.animaux.dto.pesee.PeseeRequest;
 import com.reseau_partage.animaux.dto.pesee.PeseeResponse;
 import com.reseau_partage.animaux.dto.pesee.PrevisionSortieResponse;
 import com.reseau_partage.animaux.service.PeseeService;
+import com.reseau_partage.core.entities.PeriodeBilan;
 
 @RestController
 @RequestMapping("/api/animaux/pesees")
@@ -64,5 +66,24 @@ public class PeseeController {
     public ResponseEntity<Map<String, Object>> previsions(@PathVariable Long bandeId) {
         PrevisionSortieResponse prevision = service.prevoirSortie(bandeId);
         return ResponseEntity.ok(Map.of("data", prevision, "message", "Prévision calculée pour la bande id=" + bandeId + ". Sortie prévue le " + prevision.datePrevueSortie() + ", poids cible : " + prevision.poidsPrevuKg() + " kg."));
+    }
+
+    /**
+     * GET /api/animaux/pesees/bilan?periode=SEMAINE|MOIS|TRIMESTRE|SEMESTRE|ANNUEL
+     * [&fermeId=][&bandeId=][&annee=]
+     * Génère le bilan agrégé des pesées par tranche de période :
+     * nb pesées, poids moyen/min/max, GMQ moyen, détail par bande.
+     */
+    @GetMapping("/bilan")
+    public ResponseEntity<Map<String, Object>> bilan(
+            @RequestParam PeriodeBilan periode,
+            @RequestParam(required = false) Long fermeId,
+            @RequestParam(required = false) Long bandeId,
+            @RequestParam(required = false) Integer annee) {
+        BilanPeseesResponse bilan = service.genererBilan(periode, fermeId, bandeId, annee);
+        return ResponseEntity.ok(Map.of(
+                "data", bilan,
+                "message", "Bilan " + periode.name() + " généré : " + bilan.totalPesees() + " pesée(s), "
+                        + bilan.tranches().size() + " tranche(s)."));
     }
 }

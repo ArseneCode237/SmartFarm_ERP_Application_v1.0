@@ -92,6 +92,7 @@ public class PorcinService {
     /** Crée un porcin individuel (achat, naissance interne, don). */
     @Transactional
     public PorcinResponse create(PorcinRequest request) {
+        validerImage(request.imageUrl());
         Structure structure = structureRepository.findById(request.structureId())
                 .orElseThrow(() -> new ResourceNotFoundException("Structure", request.structureId()));
 
@@ -118,6 +119,7 @@ public class PorcinService {
         animal.setNotes(request.notes());
         animal.setStatut(StatutAnimal.ACTIF);
         animal.setCodeUnique(genererCodeUnique());
+        animal.setImageUrl(request.imageUrl());
 
         // Généalogie
         if (request.mereId() != null) {
@@ -233,6 +235,10 @@ public class PorcinService {
         }
         if (request.notes() != null) {
             animal.setNotes(request.notes());
+        }
+        if (request.imageUrl() != null) {
+            validerImage(request.imageUrl());
+            animal.setImageUrl(request.imageUrl());
         }
 
         animalRepository.save(animal);
@@ -441,11 +447,27 @@ public class PorcinService {
                         : null,
                 profil != null ? profil.getDateExtractionBande() : null,
                 profil != null ? profil.getPoidsSelectionKg() : null,
-                animal.getDateCreation());
+                animal.getDateCreation(),
+                animal.getImageUrl());
     }
 
     private String genererCodeUnique() {
         long seq = animalRepository.count() + 1;
         return String.format("SF-PO-%05d", seq);
+    }
+
+    private void validerImage(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) return;
+        int imageBytes = imageUrl.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+        int tailleMaxAutorisee = 10 * 1024 * 1024; // 10 Mo
+        if (imageBytes > tailleMaxAutorisee) {
+            throw new IllegalArgumentException(
+                "L'image est trop volumineuse (" + (imageBytes / 1024) + " Ko). " +
+                "Taille maximale autorisée : " + (tailleMaxAutorisee / 1024 / 1024) + " Mo.");
+        }
+        if (imageUrl.startsWith("data:") && !imageUrl.matches("^data:image/(jpeg|png|gif|webp);base64,.*")) {
+            throw new IllegalArgumentException(
+                "Format d'image invalide. Formats acceptés : JPEG, PNG, GIF, WEBP.");
+        }
     }
 }

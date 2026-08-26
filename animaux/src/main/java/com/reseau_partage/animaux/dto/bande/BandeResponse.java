@@ -87,7 +87,12 @@ public record BandeResponse(
         Double consommationAlimentaireTotaleKg,
         Double tauxConversionAlimentaire,
         Double gainMoyenQuotidien,
-        Double densiteOptimalePct
+        Double densiteOptimalePct,
+
+        // ============================================
+        // 📷 IMAGE
+        // ============================================
+        String imageUrl
 ) {
     /**
      * Vérifie si la bande est une bande piscicole

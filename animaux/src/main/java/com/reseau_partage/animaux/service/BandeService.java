@@ -59,6 +59,7 @@ public class BandeService {
 
     @Transactional
     public BandeResponse create(BandeRequest request) {
+        validerImage(request.imageUrl());
         Structure structure = structureRepository.findById(request.structureId())
                 .orElseThrow(() -> new ResourceNotFoundException("Structure non trouvée avec l'ID : " + request.structureId()));
         if (structure.getStatut() != StatutStructure.ACTIF) {
@@ -167,12 +168,14 @@ public class BandeService {
                 b.getTemperatureEau(),
                 b.getPhEau(),
                 b.getOxygeneDissous(),
-                b.getRacePoisson()
+                b.getRacePoisson(),
+                b.getImageUrl()
         );
     }
 
     @Transactional
     public BandeResponse update(Long id, BandeRequest request) {
+        validerImage(request.imageUrl());
         Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande non trouvée avec l'ID : " + id));
         bande.setNom(request.nom());
         bande.setEspece(request.espece());
@@ -182,6 +185,9 @@ public class BandeService {
         bande.setTypeProduction(request.typeProduction());
         bande.setDescription(request.description());
         bande.setNotes(request.notes());
+        if (request.imageUrl() != null) {
+            bande.setImageUrl(request.imageUrl());
+        }
         bande.setDateEntree(request.dateEntree());
         bande.setDateSortiePrevue(request.dateSortiePrevue());
         bande.setDateSortieReelle(request.dateSortieReelle());
@@ -353,6 +359,22 @@ public class BandeService {
         List<BandeResponse> result = new ArrayList<>();
         result.add(toResponse(bande));
         return result;
+    }
+
+    private void validerImage(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) return;
+        int imageBytes = imageUrl.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+        int tailleMaxAutorisee = 10 * 1024 * 1024; // 10 Mo
+        if (imageBytes > tailleMaxAutorisee) {
+            throw new IllegalArgumentException(
+                "L'image est trop volumineuse (" + (imageBytes / 1024) + " Ko). " +
+                "Taille maximale autorisée : " + (tailleMaxAutorisee / 1024 / 1024) + " Mo. " +
+                "Essayez une image plus petite ou comprimée (JPEG/PNG < 10 Mo).");
+        }
+        if (imageUrl.startsWith("data:") && !imageUrl.matches("^data:image/(jpeg|png|gif|webp);base64,.*")) {
+            throw new IllegalArgumentException(
+                "Format d'image invalide. Formats acceptés : JPEG, PNG, GIF, WEBP.");
+        }
     }
 
     private String genererCodeBande(BandeRequest request) {

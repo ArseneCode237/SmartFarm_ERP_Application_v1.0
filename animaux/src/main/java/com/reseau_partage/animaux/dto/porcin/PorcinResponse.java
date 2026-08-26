@@ -53,5 +53,8 @@ public record PorcinResponse(
         LocalDate dateExtractionBande,
         BigDecimal poidsSelectionKg,
 
-        LocalDateTime dateCreation
+        LocalDateTime dateCreation,
+
+        // ── Image ─────────────────────────────────────────────────────────────
+        String imageUrl
 ) {}

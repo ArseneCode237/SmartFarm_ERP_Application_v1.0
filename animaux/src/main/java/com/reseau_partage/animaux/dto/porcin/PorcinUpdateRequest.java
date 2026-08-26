@@ -21,5 +21,8 @@ public record PorcinUpdateRequest(
         Provenance provenance,
         String fournisseurNom,
         BigDecimal prixUnitaire,
-        String notes
+        String notes,
+
+        // ── Image ─────────────────────────────────────────────────────────────
+        String imageUrl
 ) {}

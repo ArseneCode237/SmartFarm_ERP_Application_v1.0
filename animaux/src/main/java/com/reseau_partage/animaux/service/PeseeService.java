@@ -4,11 +4,16 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.reseau_partage.animaux.dto.pesee.BilanBandeItem;
+import com.reseau_partage.animaux.dto.pesee.BilanPeseesResponse;
+import com.reseau_partage.animaux.dto.pesee.BilanTrancheResponse;
 import com.reseau_partage.animaux.dto.pesee.IndicateursBandeResponse;
 import com.reseau_partage.animaux.dto.pesee.PeseeRequest;
 import com.reseau_partage.animaux.dto.pesee.PeseeResponse;
@@ -19,6 +24,7 @@ import com.reseau_partage.core.entities.Animal;
 import com.reseau_partage.core.entities.Bande;
 import com.reseau_partage.core.entities.ConfigEspece;
 import com.reseau_partage.core.entities.CourbeCroissanceReference;
+import com.reseau_partage.core.entities.PeriodeBilan;
 import com.reseau_partage.core.entities.Pesee;
 import com.reseau_partage.core.repository.AnimalRepository;
 import com.reseau_partage.core.repository.BandeRepository;
@@ -57,6 +63,19 @@ public class PeseeService {
         }
         Pesee pesee = new Pesee();
         LocalDate date = request.datePesee() != null ? request.datePesee() : LocalDate.now();
+        pesee.setDatePesee(date);
+        pesee.setPoidsKg(request.poidsKg());
+
+        if (request.animalId() != null
+                && peseeRepository.existsByAnimalIdAndDatePesee(request.animalId(), date)) {
+            throw new IllegalArgumentException(
+                    "Une pesée de cet animal a déjà été enregistrée le " + date + ". Prochaine pesée possible demain.");
+        }
+        if (request.bandeId() != null
+                && peseeRepository.existsByBandeIdAndDatePesee(request.bandeId(), date)) {
+            throw new IllegalArgumentException(
+                    "Une pesée de cette bande a déjà été enregistrée le " + date + ". Prochaine pesée possible demain.");
+        }
 
         if (request.animalId() != null) {
             Animal animal = animalRepository.findById(request.animalId())
@@ -65,6 +84,7 @@ public class PeseeService {
             pesee.setAgeJoursAuMomentPesee(animal.getDateNaissance() != null
                     ? (int) ChronoUnit.DAYS.between(animal.getDateNaissance(), date) : null);
             alimenterPeseeAnimale(pesee, animal, date, request.poidsKg());
+            referencerPeseePrecedente(pesee, peseeRepository.findTopByAnimalIdOrderByDatePeseeDesc(request.animalId()).orElse(null));
             animal.setPoidsActuelKg(request.poidsKg());
             animal.setDateDernierePesee(date);
             animalRepository.save(animal);
@@ -72,12 +92,12 @@ public class PeseeService {
             Bande bande = bandeRepository.findById(request.bandeId())
                     .orElseThrow(() -> new ResourceNotFoundException("Bande", request.bandeId()));
             pesee.setBande(bande);
-            alimenterPeseeBande(pesee, bande, request.poidsKg());
+            Pesee precedente = dernierePeseeBande(request.bandeId(), date);
+            referencerPeseePrecedente(pesee, precedente);
+            alimenterPeseeBande(pesee, bande, request.poidsKg(), precedente);
             bande.setPoidsMoyenActuelKg(request.poidsKg());
             bandeRepository.save(bande);
         }
-        pesee.setDatePesee(date);
-        pesee.setPoidsKg(request.poidsKg());
         pesee.setOperateurNom(request.operateurNom());
         pesee.setNotes(request.notes());
         peseeRepository.save(pesee);
@@ -88,8 +108,13 @@ public class PeseeService {
     public List<PeseeResponse> peseeCollectiveBande(Long bandeId, PeseeRequest request) {
         Bande bande = bandeRepository.findById(bandeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Bande", bandeId));
+        LocalDate dateCollective = request.datePesee() != null ? request.datePesee() : LocalDate.now();
+        if (peseeRepository.existsByBandeIdAndDatePesee(bandeId, dateCollective)) {
+            throw new IllegalArgumentException(
+                    "Une pesée de cette bande a déjà été enregistrée le " + dateCollective + ". Prochaine pesée possible demain.");
+        }
         List<Animal> animaux = animalRepository.findByBandeId(bandeId);
-        LocalDate date = request.datePesee() != null ? request.datePesee() : LocalDate.now();
+        LocalDate date = dateCollective;
         List<PeseeResponse> resultats = new java.util.ArrayList<>();
         for (Animal animal : animaux) {
             if (animal.getStatut() != com.reseau_partage.core.entities.StatutAnimal.ACTIF) {
@@ -103,6 +128,7 @@ public class PeseeService {
             p.setAgeJoursAuMomentPesee(animal.getDateNaissance() != null
                     ? (int) ChronoUnit.DAYS.between(animal.getDateNaissance(), date) : null);
             alimenterPeseeAnimale(p, animal, date, request.poidsKg());
+            referencerPeseePrecedente(p, peseeRepository.findTopByAnimalIdOrderByDatePeseeDesc(animal.getId()).orElse(null));
             animal.setPoidsActuelKg(request.poidsKg());
             animal.setDateDernierePesee(date);
             animalRepository.save(animal);
@@ -217,9 +243,38 @@ public class PeseeService {
         calculerEcartReference(pesee, animal.getEspece(), animal.getRace(), pesee.getAgeJoursAuMomentPesee(), poids);
     }
 
-    private void alimenterPeseeBande(Pesee pesee, Bande bande, BigDecimal poids) {
-        // pesée collective : pas de GMQ ni écart individuel
+    /**
+     * Pesée de bande (poids moyen) : calcule le gain depuis la pesée précédente,
+     * le GMQ (g/jour/animal) et met à jour la bande :
+     *  - gainMoyenQuotidienG = (poids actuel − poids précédent) × 1000 / jours
+     *  - fcrCumule (IC) = (ration journalière × jours) / gain par animal
+     */
+    private void alimenterPeseeBande(Pesee pesee, Bande bande, BigDecimal poids, Pesee precedente) {
         pesee.setPoidsKg(poids);
+        if (precedente == null || precedente.getPoidsKg() == null
+                || precedente.getDatePesee() == null || pesee.getDatePesee() == null) {
+            return;
+        }
+        long jours = ChronoUnit.DAYS.between(precedente.getDatePesee(), pesee.getDatePesee());
+        if (jours <= 0) return;
+
+        BigDecimal deltaKg = poids.subtract(precedente.getPoidsKg());
+        pesee.setGainDepuisDernierePeseeKg(deltaKg.setScale(3, RoundingMode.HALF_UP));
+
+        // GMQ en g/jour/animal
+        BigDecimal gmq = deltaKg.multiply(BigDecimal.valueOf(1000))
+                .divide(BigDecimal.valueOf(jours), 2, RoundingMode.HALF_UP);
+        pesee.setGmqG(gmq);
+        bande.setGainMoyenQuotidienG(gmq);
+
+        // IC (indice de consommation) estimé : consommation par animal sur la
+        // période divisée par le gain de poids moyen par animal.
+        // La ration journalière étant par animal, l'effectif se simplifie.
+        if (bande.getRationJournaliereKg() != null && deltaKg.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal consommationParAnimal = bande.getRationJournaliereKg()
+                    .multiply(BigDecimal.valueOf(jours));
+            bande.setFcrCumule(consommationParAnimal.divide(deltaKg, 2, RoundingMode.HALF_UP));
+        }
     }
 
     private void calculerEcartReference(Pesee pesee, com.reseau_partage.core.entities.Espece espece, String race,
@@ -241,5 +296,166 @@ public class PeseeService {
     private boolean estSousPerformeur(Animal animal, Bande bande) {
         Pesee derniere = peseeRepository.findTopByAnimalIdOrderByDatePeseeDesc(animal.getId()).orElse(null);
         return derniere != null && Boolean.TRUE.equals(derniere.getSousPerformeur());
+    }
+
+    /**
+     * Copie sur la nouvelle pesée la référence du poids précédent :
+     * poids et date de la dernière pesée enregistrée (même animal ou même bande).
+     */
+    private void referencerPeseePrecedente(Pesee pesee, Pesee precedente) {
+        if (precedente == null) return;
+        pesee.setPoidsPrecedentKg(precedente.getPoidsKg());
+        pesee.setDatePeseePrecedente(precedente.getDatePesee());
+    }
+
+    /**
+     * Dernière pesée de bande antérieure à la date donnée.
+     */
+    private Pesee dernierePeseeBande(Long bandeId, LocalDate avantDate) {
+        return peseeRepository.findByBandeIdOrderByDatePeseeDesc(bandeId).stream()
+                .filter(p -> p.getDatePesee() != null && p.getDatePesee().isBefore(avantDate))
+                .findFirst()
+                .orElse(null);
+    }
+
+    // =========================================================================
+    // BILANS PAR PÉRIODE (SEMAINE / MOIS / TRIMESTRE / SEMESTRE / ANNUEL)
+    // =========================================================================
+
+    /**
+     * Génère le bilan des pesées agrégé par tranche de période.
+     * Seules les tranches contenant au moins une pesée sont retournées.
+     */
+    @Transactional(readOnly = true)
+    public BilanPeseesResponse genererBilan(PeriodeBilan periode, Long fermeId, Long bandeId, Integer annee) {
+        int anneeRef = (annee != null && annee > 1900) ? annee : LocalDate.now().getYear();
+        List<Pesee> pesees = peseeRepository.findForBilan(fermeId, bandeId);
+
+        Map<String, List<Pesee>> groupes = new LinkedHashMap<>();
+        for (Pesee p : pesees) {
+            if (p.getDatePesee() == null) continue;
+            if (!dansAnneeReference(p.getDatePesee(), periode, anneeRef)) continue;
+            String cle = cleTranche(p.getDatePesee(), periode);
+            groupes.computeIfAbsent(cle, k -> new ArrayList<>()).add(p);
+        }
+
+        List<BilanTrancheResponse> tranches = new ArrayList<>();
+        for (Map.Entry<String, List<Pesee>> entry : groupes.entrySet()) {
+            List<Pesee> groupe = entry.getValue();
+            LocalDate debut = groupe.get(0).getDatePesee();
+            LocalDate fin = debut;
+            for (Pesee p : groupe) {
+                LocalDate d = p.getDatePesee();
+                if (d.isBefore(debut)) debut = d;
+                if (d.isAfter(fin)) fin = d;
+            }
+            tranches.add(construireTranche(entry.getKey(),
+                    libelleTranche(debut, periode, anneeRef), debut, fin, groupe));
+        }
+
+        return new BilanPeseesResponse(periode.name(), anneeRef, (long) pesees.stream()
+                .filter(p -> p.getDatePesee() != null)
+                .filter(p -> dansAnneeReference(p.getDatePesee(), periode, anneeRef))
+                .count(), tranches);
+    }
+
+    /** Filtre les pesées hors fenêtre couverte par le bilan. */
+    private boolean dansAnneeReference(LocalDate date, PeriodeBilan periode, int anneeRef) {
+        if (periode == PeriodeBilan.ANNUEL) {
+            return date.getYear() >= anneeRef - 4 && date.getYear() <= anneeRef;
+        }
+        return date.getYear() == anneeRef;
+    }
+
+    /** Clé de regroupement d'une pesée selon la période. */
+    private String cleTranche(LocalDate date, PeriodeBilan periode) {
+        return switch (periode) {
+            case SEMAINE -> date.getYear() + "-S" + String.format("%02d", date.get(java.time.temporal.WeekFields.ISO.weekOfWeekBasedYear()));
+            case MOIS -> String.format("%d-%02d", date.getYear(), date.getMonthValue());
+            case TRIMESTRE -> date.getYear() + "-T" + ((date.getMonthValue() - 1) / 3 + 1);
+            case SEMESTRE -> date.getYear() + "-S" + (date.getMonthValue() <= 6 ? 1 : 2);
+            case ANNUEL -> String.valueOf(date.getYear());
+        };
+    }
+
+    /** Libellé lisible d'une tranche. */
+    private String libelleTranche(LocalDate debut, PeriodeBilan periode, int anneeRef) {
+        return switch (periode) {
+            case SEMAINE -> "Semaine du " + debut.toString();
+            case MOIS -> debut.getMonth().getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.FRENCH)
+                    + " " + debut.getYear();
+            case TRIMESTRE -> "T" + ((debut.getMonthValue() - 1) / 3 + 1) + " " + debut.getYear();
+            case SEMESTRE -> "S" + (debut.getMonthValue() <= 6 ? 1 : 2) + " " + debut.getYear();
+            case ANNUEL -> String.valueOf(debut.getYear());
+        };
+    }
+
+    /** Construit les agrégats d'une tranche à partir de ses pesées (triées ASC). */
+    private BilanTrancheResponse construireTranche(String cle, String libelle, LocalDate debut, LocalDate fin,
+                                                   List<Pesee> pesees) {
+        List<BigDecimal> poids = pesees.stream().map(Pesee::getPoidsKg).filter(java.util.Objects::nonNull).toList();
+
+        BigDecimal min = poids.stream().min(BigDecimal::compareTo).orElse(null);
+        BigDecimal max = poids.stream().max(BigDecimal::compareTo).orElse(null);
+        BigDecimal moyenne = BigDecimal.ZERO;
+        if (!poids.isEmpty()) {
+            BigDecimal somme = poids.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+            moyenne = somme.divide(BigDecimal.valueOf(poids.size()), 3, RoundingMode.HALF_UP);
+        }
+        BigDecimal gmq = calculerGmqGroupe(pesees);
+
+        long nbBandes = pesees.stream().map(Pesee::getBande).filter(java.util.Objects::nonNull)
+                .map(Bande::getId).distinct().count();
+
+        // Détail par bande
+        Map<Long, List<Pesee>> parBande = new LinkedHashMap<>();
+        for (Pesee p : pesees) {
+            if (p.getBande() == null) continue;
+            parBande.computeIfAbsent(p.getBande().getId(), k -> new ArrayList<>()).add(p);
+        }
+        List<BilanBandeItem> bandes = new ArrayList<>();
+        for (Map.Entry<Long, List<Pesee>> e : parBande.entrySet()) {
+            List<Pesee> gp = e.getValue();
+            Bande b = gp.get(0).getBande();
+            List<BigDecimal> pb = gp.stream().map(Pesee::getPoidsKg).filter(java.util.Objects::nonNull).toList();
+            bandes.add(new BilanBandeItem(
+                    b.getId(),
+                    b.getCodeBande(),
+                    b.getNom(),
+                    (long) gp.size(),
+                    pb.isEmpty() ? null
+                            : pb.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
+                                    .divide(BigDecimal.valueOf(pb.size()), 3, RoundingMode.HALF_UP),
+                    pb.stream().min(BigDecimal::compareTo).orElse(null),
+                    pb.stream().max(BigDecimal::compareTo).orElse(null),
+                    calculerGmqGroupe(gp)));
+        }
+
+        return new BilanTrancheResponse(cle, libelle, debut, fin,
+                (long) pesees.size(), nbBandes,
+                poids.isEmpty() ? null : moyenne,
+                min, max, gmq, bandes);
+    }
+
+    /**
+     * GMQ moyen (g/jour) d'un groupe de pesées :
+     * moyenne des GMQ stockés si disponibles, sinon recalcul linéaire
+     * entre la première et la dernière pesée.
+     */
+    private BigDecimal calculerGmqGroupe(List<Pesee> pesees) {
+        List<BigDecimal> gmqValues = pesees.stream()
+                .map(Pesee::getGmqG).filter(java.util.Objects::nonNull).toList();
+        if (!gmqValues.isEmpty()) {
+            return gmqValues.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .divide(BigDecimal.valueOf(gmqValues.size()), 2, RoundingMode.HALF_UP);
+        }
+        if (pesees.size() < 2) return null;
+        Pesee first = pesees.get(0);
+        Pesee last = pesees.get(pesees.size() - 1);
+        long jours = ChronoUnit.DAYS.between(first.getDatePesee(), last.getDatePesee());
+        if (jours <= 0 || first.getPoidsKg() == null || last.getPoidsKg() == null) return null;
+        return last.getPoidsKg().subtract(first.getPoidsKg())
+                .multiply(BigDecimal.valueOf(1000))
+                .divide(BigDecimal.valueOf(jours), 2, RoundingMode.HALF_UP);
     }
 }

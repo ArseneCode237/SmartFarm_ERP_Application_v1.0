@@ -30,6 +30,7 @@ public record AnimalRequest(
         String fournisseurNom,
         String numeroLotAchat,
         LocalDate dateDerniereDeclaration,
-        String notes
+        String notes,
+        String imageUrl
 ) {
 }
