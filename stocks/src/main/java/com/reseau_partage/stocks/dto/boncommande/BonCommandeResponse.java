@@ -1,6 +1,5 @@
 package com.reseau_partage.stocks.dto.boncommande;
 
-import com.reseau_partage.core.entities.LigneBonCommande;
 import com.reseau_partage.core.entities.enumtypes.StatutBonCommande;
 
 import java.math.BigDecimal;
@@ -20,7 +19,7 @@ public class BonCommandeResponse {
     private LocalDate dateLivraisonPrevue;
     private LocalDate dateLivraisonReelle;
     private BigDecimal montantTotalHt;
-    private List<LigneBonCommande> lignes;
+    private List<LigneBonCommandeResponse> lignes;
     private String notes;
     private LocalDateTime dateCreation;
     private LocalDateTime dateModification;
@@ -105,11 +104,11 @@ public class BonCommandeResponse {
         this.montantTotalHt = montantTotalHt;
     }
 
-    public List<LigneBonCommande> getLignes() {
+    public List<LigneBonCommandeResponse> getLignes() {
         return lignes;
     }
 
-    public void setLignes(List<LigneBonCommande> lignes) {
+    public void setLignes(List<LigneBonCommandeResponse> lignes) {
         this.lignes = lignes;
     }
 
