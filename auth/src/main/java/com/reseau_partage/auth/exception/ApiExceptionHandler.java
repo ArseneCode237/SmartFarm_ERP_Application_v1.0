@@ -25,8 +25,20 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiError> handleDataIntegrityViolation() {
-        return error(HttpStatus.CONFLICT, "Cette valeur est deja utilisee.");
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException exception) {
+        String detail = null;
+        try {
+            if (exception.getMostSpecificCause() != null) {
+                detail = exception.getMostSpecificCause().getMessage();
+            } else {
+                detail = exception.getMessage();
+            }
+        } catch (Exception ex) {
+            detail = "(detail non disponible)";
+        }
+        Map<String, String> fieldErrors = Map.of("constraint", detail == null ? "" : detail);
+        // Fournir le message racine pour faciliter le debug localement. Ne pas exposer en production.
+        return error(HttpStatus.CONFLICT, "Cette valeur est deja utilisee. " + (detail == null ? "" : "(" + detail + ")"), fieldErrors);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

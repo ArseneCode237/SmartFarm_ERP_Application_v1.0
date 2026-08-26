@@ -1,0 +1,420 @@
+package com.reseau_partage.animaux.service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.reseau_partage.animaux.dto.bande.BandeRequest;
+import com.reseau_partage.animaux.dto.bande.BandeResponse;
+import com.reseau_partage.animaux.exception.IncompatibiliteEspeceException;
+import com.reseau_partage.animaux.exception.QuantiteInvalideException;
+import com.reseau_partage.animaux.exception.ResourceNotFoundException;
+import com.reseau_partage.animaux.mapper.BandeMapper;
+import com.reseau_partage.core.entities.Animal;
+import com.reseau_partage.core.entities.Bande;
+import com.reseau_partage.core.entities.Enclos;
+import com.reseau_partage.core.entities.Espece;
+import com.reseau_partage.core.entities.MouvementAnimal;
+import com.reseau_partage.core.entities.Site;
+import com.reseau_partage.core.entities.StatutBande;
+import com.reseau_partage.core.entities.StatutStructure;
+import com.reseau_partage.core.entities.Structure;
+import com.reseau_partage.core.entities.TypeMouvement;
+import com.reseau_partage.core.repository.AnimalRepository;
+import com.reseau_partage.core.repository.BandeRepository;
+import com.reseau_partage.core.repository.FermeRepository;
+import com.reseau_partage.core.repository.MouvementAnimalRepository;
+import com.reseau_partage.core.repository.SiteRepository;
+import com.reseau_partage.core.repository.StructureRepository;
+
+@Service
+public class BandeService {
+
+    private final BandeRepository bandeRepository;
+    private final AnimalRepository animalRepository;
+    private final MouvementAnimalRepository mouvementRepository;
+    private final StructureRepository structureRepository;
+    private final SiteRepository siteRepository;
+    private final FermeRepository fermeRepository;
+    private final BandeMapper bandeMapper;
+
+    public BandeService(BandeRepository bandeRepository, AnimalRepository animalRepository, MouvementAnimalRepository mouvementRepository, StructureRepository structureRepository, SiteRepository siteRepository, FermeRepository fermeRepository, BandeMapper bandeMapper) {
+        this.bandeRepository = bandeRepository;
+        this.animalRepository = animalRepository;
+        this.mouvementRepository = mouvementRepository;
+        this.structureRepository = structureRepository;
+        this.siteRepository = siteRepository;
+        this.fermeRepository = fermeRepository;
+        this.bandeMapper = bandeMapper;
+    }
+
+    @Transactional
+    public BandeResponse create(BandeRequest request) {
+        validerImage(request.imageUrl());
+        Structure structure = structureRepository.findById(request.structureId())
+                .orElseThrow(() -> new ResourceNotFoundException("Structure non trouvée avec l'ID : " + request.structureId()));
+        if (structure.getStatut() != StatutStructure.ACTIF) {
+            throw new IllegalArgumentException("Impossible de créer une bande : la structure (ID=" + request.structureId() + ") n'est pas active. Statut actuel : " + structure.getStatut());
+        }
+        if (structure instanceof Enclos e && e.getEspecesCompatibles() != null && !e.getEspecesCompatibles().contains(request.espece().name())) {
+            throw new IncompatibiliteEspeceException("Impossible de créer la bande : l'enclos (ID=" + request.structureId() + ") n'est pas compatible avec l'espèce " + request.espece() + ". Espèces compatibles : " + e.getEspecesCompatibles());
+        }
+        Bande bande = bandeMapper.toEntity(request);
+        bande.setStructure(structure);
+        
+        if (request.siteId() != null) {
+            Site site = siteRepository.findById(request.siteId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Site non trouvé avec l'ID : " + request.siteId()));
+            bande.setSite(site);
+        }
+        
+        // Initialiser les champs supplémentaires
+        bande.setCategorie(request.categorie());
+        bande.setDescription(request.description());
+        bande.setProvenance(request.provenance());
+        bande.setFournisseurNom(request.fournisseurNom());
+        bande.setCoutAchatUnitaire(request.coutAchatUnitaire());
+        bande.setRationJournaliereKg(request.rationJournaliereKg());
+        // Initialiser les effectifs (effectifActuel est déjà initialisé par le mapper à effectifInitial)
+        bande.setEffectifMorts(0);
+        bande.setEffectifVendus(0);
+        bande.setEffectifReformes(0);
+        bande.setTotalDeclaresMorts(0);
+        bande.setTotalDeclaresVendus(0);
+        bande.setTotalDeclaresReformes(0);
+        bande.setRevenuTotalVentes(java.math.BigDecimal.ZERO);
+        
+        bande.setCodeBande(genererCodeBande(request));
+        bande.setStatut(request.statut() != null ? request.statut() : StatutBande.EN_COURS);
+        bandeRepository.save(bande);
+        enregistrerMouvementEntree(bande, request.effectifInitial());
+        return toResponse(bande);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<BandeResponse> list(Long structureId, Long siteId, Long fermeId, Espece espece, StatutBande statut, Pageable pageable) {
+        return bandeRepository.findFiltre(fermeId, siteId, structureId, espece, statut, pageable).map(this::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public BandeResponse get(Long id) {
+        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande", id));
+        return toResponse(bande);
+    }
+
+    /**
+     * Récupère les données d'une bande existante pour pré-remplir un nouveau formulaire.
+     * Le nom est préfixé avec "Copie - ".
+     * Les données de configuration sont conservées (espèce, race, type, etc.).
+     * Les statistiques d'usage (effectifs, déclarations, revenus, dates) sont remises à zéro/null.
+     */
+    @Transactional(readOnly = true)
+    public BandeRequest duplicate(Long id) {
+        Bande b = bandeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Bande", id));
+
+        String nomCopie = "Copie - " + b.getNom();
+
+        return new BandeRequest(
+                nomCopie,
+                b.getEspece(),
+                b.getRace(),
+                b.getSouche(),
+                b.getCategorie(),
+                b.getTypeProduction(),
+                b.getSite() != null ? b.getSite().getId() : null,
+                b.getStructure() != null ? b.getStructure().getId() : null,
+                b.getProvenance(),
+                b.getFournisseurNom(),
+                b.getCoutAchatUnitaire(),
+                b.getEffectifInitial(),
+                null, // effectifActuel : remis à zéro
+                null, // effectifMorts
+                null, // effectifVendus
+                null, // effectifReformes
+                null, // totalDeclaresMorts
+                null, // totalDeclaresVendus
+                null, // totalDeclaresReformes
+                null, // revenuTotalVentes
+                null, // dateDerniereDeclaration
+                null, // dateEntree : sera la date de création
+                null, // dateSortiePrevue
+                null, // dateSortieReelle
+                b.getPoidsMoyenEntreeKg(),
+                null, // poidsMoyenActuelKg
+                null, // poidsTotalSortie
+                b.getRationJournaliereKg(),
+                null, // fcrCumule
+                null, // tauxPontePct
+                null, // gainMoyenQuotidienG
+                b.getDescription(),
+                null, // statut : EN_COURS à la création
+                b.getNotes(),
+                b.getMere() != null ? b.getMere().getId() : null,
+                b.getPere() != null ? b.getPere().getId() : null,
+                b.getDensitePoissons(),
+                b.getTailleMoyenne(),
+                b.getAlimentation(),
+                b.getSystemeElevage(),
+                b.getTemperatureEau(),
+                b.getPhEau(),
+                b.getOxygeneDissous(),
+                b.getRacePoisson(),
+                b.getImageUrl()
+        );
+    }
+
+    @Transactional
+    public BandeResponse update(Long id, BandeRequest request) {
+        validerImage(request.imageUrl());
+        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande non trouvée avec l'ID : " + id));
+        bande.setNom(request.nom());
+        bande.setEspece(request.espece());
+        bande.setRace(request.race());
+        bande.setSouche(request.souche());
+        bande.setCategorie(request.categorie());
+        bande.setTypeProduction(request.typeProduction());
+        bande.setDescription(request.description());
+        bande.setNotes(request.notes());
+        if (request.imageUrl() != null) {
+            bande.setImageUrl(request.imageUrl());
+        }
+        bande.setDateEntree(request.dateEntree());
+        bande.setDateSortiePrevue(request.dateSortiePrevue());
+        bande.setDateSortieReelle(request.dateSortieReelle());
+        bande.setEffectifInitial(request.effectifInitial());
+        // Mettre à jour effectifActuel seulement si fourni, sinon ne pas écraser
+        if (request.effectifActuel() != null) {
+            bande.setEffectifActuel(request.effectifActuel());
+        }
+        bande.setEffectifMorts(request.effectifMorts());
+        bande.setEffectifVendus(request.effectifVendus());
+        bande.setEffectifReformes(request.effectifReformes());
+        if (request.totalDeclaresMorts() != null) {
+            bande.setTotalDeclaresMorts(request.totalDeclaresMorts());
+        }
+        if (request.totalDeclaresVendus() != null) {
+            bande.setTotalDeclaresVendus(request.totalDeclaresVendus());
+        }
+        if (request.totalDeclaresReformes() != null) {
+            bande.setTotalDeclaresReformes(request.totalDeclaresReformes());
+        }
+        if (request.revenuTotalVentes() != null) {
+            bande.setRevenuTotalVentes(request.revenuTotalVentes());
+        }
+        bande.setDateDerniereDeclaration(request.dateDerniereDeclaration());
+        bande.setPoidsMoyenEntreeKg(request.poidsMoyenEntreeKg());
+        bande.setPoidsMoyenActuelKg(request.poidsMoyenActuelKg());
+        bande.setPoidsTotalSortie(request.poidsTotalSortie());
+        bande.setRationJournaliereKg(request.rationJournaliereKg());
+        bande.setFcrCumule(request.fcrCumule());
+        bande.setTauxPontePct(request.tauxPontePct());
+        bande.setGainMoyenQuotidienG(request.gainMoyenQuotidienG());
+        bande.setProvenance(request.provenance());
+        bande.setFournisseurNom(request.fournisseurNom());
+        bande.setCoutAchatUnitaire(request.coutAchatUnitaire());
+        // Mettre à jour le statut seulement si fourni
+        if (request.statut() != null) {
+            bande.setStatut(request.statut());
+        }
+        
+        if (request.siteId() != null && !Objects.equals(request.siteId(), bande.getSite() != null ? bande.getSite().getId() : null)) {
+            var site = siteRepository.findById(request.siteId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Site non trouvé avec l'ID : " + request.siteId()));
+            bande.setSite(site);
+        }
+        
+        if (request.structureId() != null && !Objects.equals(request.structureId(), bande.getStructure().getId())) {
+            Structure destination = structureRepository.findById(request.structureId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Structure non trouvée avec l'ID : " + request.structureId()));
+            if (destination.getStatut() != StatutStructure.ACTIF) {
+                throw new IllegalArgumentException("Impossible de mettre à jour la bande : la structure de destination (ID=" + request.structureId() + ") n'est pas active. Statut actuel : " + destination.getStatut());
+            }
+            if (destination instanceof Enclos e && e.getEspecesCompatibles() != null && !e.getEspecesCompatibles().contains(request.espece().name())) {
+                throw new IncompatibiliteEspeceException("Impossible de mettre à jour la bande : l'enclos de destination (ID=" + request.structureId() + ") n'est pas compatible avec l'espèce " + request.espece() + ". Espèces compatibles : " + e.getEspecesCompatibles());
+            }
+            bande.setStructure(destination);
+            enregistrerMouvementTransfert(bande, destination);
+        }
+        return toResponse(bande);
+    }
+
+    @Transactional
+    public void sortieCollective(Long id, TypeMouvement typeMouvement, LocalDate dateSortie, Integer quantite, BigDecimal poidsKg, BigDecimal prixUnitaire, String motif, String operateurNom) {
+        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande non trouvée avec l'ID : " + id));
+        if (bande.getStatut() != StatutBande.EN_COURS) {
+            throw new IllegalArgumentException("Impossible d'enregistrer une sortie collective : la bande (ID=" + id + ") n'est pas en cours. Statut actuel : " + bande.getStatut());
+        }
+        if (quantite == null || quantite <= 0) {
+            throw new IllegalArgumentException("Impossible d'enregistrer une sortie collective : la quantité doit être supérieure à 0. Valeur fournie : " + quantite);
+        }
+        if (quantite > bande.getEffectifActuel()) {
+            throw new QuantiteInvalideException(quantite, bande.getEffectifActuel());
+        }
+        bande.setEffectifActuel(bande.getEffectifActuel() - quantite);
+        switch (typeMouvement) {
+            case SORTIE_MORT -> {
+                bande.setStatut(StatutBande.TERMINEE);
+                bande.setEffectifMorts((bande.getEffectifMorts() == null ? 0 : bande.getEffectifMorts()) + quantite);
+            }
+            case SORTIE_VENTE -> {
+                if (bande.getEffectifActuel() == 0) bande.setStatut(StatutBande.VENDUE);
+                bande.setEffectifVendus((bande.getEffectifVendus() == null ? 0 : bande.getEffectifVendus()) + quantite);
+            }
+            case SORTIE_REFORME -> {
+                if (bande.getEffectifActuel() == 0) bande.setStatut(StatutBande.TERMINEE);
+                bande.setEffectifReformes((bande.getEffectifReformes() == null ? 0 : bande.getEffectifReformes()) + quantite);
+            }
+            default -> throw new IllegalArgumentException("Type de mouvement invalide pour une sortie collective. Valeurs acceptées : SORTIE_VENTE, SORTIE_MORT, SORTIE_REFORME. Valeur fournie : " + typeMouvement);
+        }
+        if (bande.getEffectifActuel() == 0) {
+            bande.setDateSortieReelle(dateSortie);
+        }
+        MouvementAnimal mouvement = new MouvementAnimal();
+        mouvement.setBande(bande);
+        mouvement.setTypeMouvement(typeMouvement);
+        mouvement.setDateMouvement(dateSortie);
+        mouvement.setQuantite(quantite);
+        mouvement.setStructureOrigine(bande.getStructure());
+        mouvement.setPoidsKg(poidsKg);
+        mouvement.setPrixUnitaire(prixUnitaire);
+        mouvement.setMotif(motif);
+        mouvement.setOperateurNom(operateurNom);
+        mouvementRepository.save(mouvement);
+    }
+
+    @Transactional
+    public void transfert(Long id, Long structureDestinationId, String operateurNom, String motif) {
+        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande non trouvée avec l'ID : " + id));
+        if (bande.getStatut() != StatutBande.EN_COURS) {
+            throw new IllegalArgumentException("Impossible de transférer la bande : la bande (ID=" + id + ") n'est pas en cours. Statut actuel : " + bande.getStatut());
+        }
+        Structure destination = structureRepository.findById(structureDestinationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Structure de destination non trouvée avec l'ID : " + structureDestinationId));
+        bande.setStructure(destination);
+        enregistrerMouvementTransfert(bande, destination);
+    }
+
+    @Transactional
+    public BandeResponse cloturer(Long id) {
+        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande non trouvée avec l'ID : " + id));
+        if (bande.getStatut() != StatutBande.EN_COURS) {
+            throw new IllegalArgumentException("Impossible de clôturer la bande : la bande (ID=" + id + ") n'est pas en cours. Statut actuel : " + bande.getStatut());
+        }
+        bande.setStatut(StatutBande.TERMINEE);
+        bande.setDateSortieReelle(LocalDate.now());
+        return toResponse(bande);
+    }
+
+    @Transactional
+    public void mettreAJourPerformances(Long id) {
+        Bande bande = bandeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bande non trouvée avec l'ID : " + id));
+        List<Animal> animaux = animalRepository.findByBandeId(id);
+        if (animaux == null || animaux.isEmpty()) {
+            return;
+        }
+        BigDecimal totalPoids = animaux.stream()
+                .map(Animal::getPoidsActuelKg)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (totalPoids.compareTo(BigDecimal.ZERO) > 0 && bande.getPoidsMoyenEntreeKg() != null && bande.getPoidsMoyenEntreeKg().compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal poidsMoyenActuel = totalPoids.divide(BigDecimal.valueOf(animaux.size()), 3, RoundingMode.HALF_UP);
+            bande.setPoidsMoyenActuelKg(poidsMoyenActuel);
+            long ageJours = ChronoUnit.DAYS.between(bande.getDateEntree(), LocalDate.now());
+            if (ageJours > 0) {
+                BigDecimal difference = poidsMoyenActuel.subtract(bande.getPoidsMoyenEntreeKg());
+                BigDecimal gmq = difference.divide(BigDecimal.valueOf(ageJours), 3, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal.valueOf(1000));
+                bande.setGainMoyenQuotidienG(gmq);
+            }
+            if (bande.getFcrCumule() == null && bande.getPoidsMoyenEntreeKg().compareTo(BigDecimal.ZERO) > 0) {
+                bande.setFcrCumule(poidsMoyenActuel.divide(bande.getPoidsMoyenEntreeKg(), 3, RoundingMode.HALF_UP));
+            }
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<BandeResponse> echeances(Long fermeId, int joursHorizon) {
+        LocalDate debut = LocalDate.now();
+        LocalDate fin = debut.plusDays(joursHorizon);
+        return bandeRepository.findBandesSortieProchaineEntre(debut, fin).stream()
+                .filter(b -> b.getStructure().getSite().getFerme().getId().equals(fermeId))
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<BandeResponse> animauxDansBande(Long bandeId) {
+        Bande bande = bandeRepository.findById(bandeId).orElseThrow(() -> new ResourceNotFoundException("Bande", bandeId));
+        List<Animal> animaux = animalRepository.findByBandeId(bandeId);
+        List<BandeResponse> result = new ArrayList<>();
+        result.add(toResponse(bande));
+        return result;
+    }
+
+    private void validerImage(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) return;
+        int imageBytes = imageUrl.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+        int tailleMaxAutorisee = 10 * 1024 * 1024; // 10 Mo
+        if (imageBytes > tailleMaxAutorisee) {
+            throw new IllegalArgumentException(
+                "L'image est trop volumineuse (" + (imageBytes / 1024) + " Ko). " +
+                "Taille maximale autorisée : " + (tailleMaxAutorisee / 1024 / 1024) + " Mo. " +
+                "Essayez une image plus petite ou comprimée (JPEG/PNG < 10 Mo).");
+        }
+        if (imageUrl.startsWith("data:") && !imageUrl.matches("^data:image/(jpeg|png|gif|webp);base64,.*")) {
+            throw new IllegalArgumentException(
+                "Format d'image invalide. Formats acceptés : JPEG, PNG, GIF, WEBP.");
+        }
+    }
+
+    private String genererCodeBande(BandeRequest request) {
+        String prefixe = switch (request.espece()) {
+            case POULET, DINDE, CANARD, PINTADE, PIGEON -> "AV";
+            case BOVIN -> "BV";
+            case OVIN -> "OV";
+            case CAPRIN -> "CA";
+            case PORC -> "PO";
+            case LAPIN -> "LA";
+            case TILAPIA, SILURE, CARPE, CREVETTE, CAPITAINE, POISSON -> "AQ";
+            default -> "XX";
+        };
+        long seq = bandeRepository.count() + 1;
+        return String.format("B-%s-%05d", prefixe, seq);
+    }
+
+    private void enregistrerMouvementEntree(Bande bande, int quantite) {
+        MouvementAnimal mouvement = new MouvementAnimal();
+        mouvement.setBande(bande);
+        mouvement.setTypeMouvement(TypeMouvement.ENTREE);
+        mouvement.setDateMouvement(bande.getDateEntree());
+        mouvement.setQuantite(quantite);
+        mouvement.setStructureOrigine(bande.getStructure());
+        mouvement.setMotif("Creation de bande");
+        mouvementRepository.save(mouvement);
+    }
+
+    private void enregistrerMouvementTransfert(Bande bande, Structure destination) {
+        MouvementAnimal mouvement = new MouvementAnimal();
+        mouvement.setBande(bande);
+        mouvement.setTypeMouvement(TypeMouvement.TRANSFERT);
+        mouvement.setDateMouvement(LocalDate.now());
+        mouvement.setStructureOrigine(bande.getStructure());
+        mouvement.setStructureDestination(destination);
+        mouvement.setMotif("Transfert de bande");
+        mouvementRepository.save(mouvement);
+    }
+
+    private BandeResponse toResponse(Bande bande) {
+        return bandeMapper.toResponse(bande);
+    }
+}

@@ -1,0 +1,36 @@
+package com.reseau_partage.core.entities;
+
+    public enum MotifDeclaration {
+    // MORT
+    MALADIE,
+    ACCIDENT,
+    PREDATEUR,
+    CAUSE_INCONNUE,
+    INCONNU,
+    MORT_NEE,
+    MORT_FOETALE,
+    MORT_PLACENTAIRE,
+    ASPHYXIE,
+    CHALEUR_EXCESSIVE,
+    VIEILLESSE,
+    AUTRE,
+
+    // VENTE
+    PARTICULIER,
+    GROSSISTE,
+    ABATTOIR,
+    ABATTAGE,
+    BOUCHERIE,
+    ELEVEUR,
+    RESTAURATION,
+    MARCHE,
+
+    // REFORME
+    PRODUCTIVITE,
+    AGE,
+    BLESSURE,
+    MALADIE_CHRONIQUE,
+    DEFAUT_MORPHOLOGIQUE,
+    SANITAIRE,
+    RENOUVELLEMENT
+}

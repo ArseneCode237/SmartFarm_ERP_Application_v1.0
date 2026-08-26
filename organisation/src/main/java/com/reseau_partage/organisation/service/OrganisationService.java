@@ -1,0 +1,731 @@
+package com.reseau_partage.organisation.service;
+
+import java.text.Normalizer;
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.reseau_partage.core.entities.Animal;
+import com.reseau_partage.core.entities.Batiment;
+import com.reseau_partage.core.entities.Enclos;
+import com.reseau_partage.core.entities.Entrepot;
+import com.reseau_partage.core.entities.Etang;
+import com.reseau_partage.core.entities.Ferme;
+import com.reseau_partage.core.entities.Parcelle;
+import com.reseau_partage.core.entities.Porcherie;
+import com.reseau_partage.core.entities.Poulailler;
+import com.reseau_partage.core.entities.Site;
+import com.reseau_partage.core.entities.StatutFerme;
+import com.reseau_partage.core.entities.StatutSite;
+import com.reseau_partage.core.entities.StatutStructure;
+import com.reseau_partage.core.entities.Structure;
+import com.reseau_partage.core.repository.AnimalRepository;
+import com.reseau_partage.core.repository.FermeRepository;
+import com.reseau_partage.core.repository.SiteRepository;
+import com.reseau_partage.core.repository.StructureRepository;
+import com.reseau_partage.core.repository.UtilisateurRepository;
+import com.reseau_partage.organisation.dto.FermeRequest;
+import com.reseau_partage.organisation.dto.SiteRequest;
+import com.reseau_partage.organisation.dto.StructureRequest;
+import com.reseau_partage.organisation.exception.ConflictException;
+import com.reseau_partage.organisation.exception.ResourceNotFoundException;
+import com.reseau_partage.organisation.exception.StatutTransitionException;
+
+@Service
+@Transactional
+public class OrganisationService {
+  private final FermeRepository fermes;
+  private final SiteRepository sites;
+  private final StructureRepository structures;
+  private final UtilisateurRepository utilisateurs;
+  private final AnimalRepository animalRepository;
+
+  public OrganisationService(FermeRepository fermes, SiteRepository sites,
+      StructureRepository structures, UtilisateurRepository utilisateurs,
+      AnimalRepository animalRepository) {
+    this.fermes = fermes;
+    this.sites = sites;
+    this.structures = structures;
+    this.utilisateurs = utilisateurs;
+    this.animalRepository = animalRepository;
+  }
+
+  public Map<String, Object> createFerme(FermeRequest r, String email) {
+    if (fermes.existsByNomAndPays(r.nom(), r.pays()))
+      throw new ConflictException("Une ferme portant ce nom existe deja dans ce pays.");
+
+    if (r.logoUrl() != null && !r.logoUrl().isBlank()) {
+      int logoBytes = r.logoUrl().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+      int tailleMaxAutorisee = 10 * 1024 * 1024; // 10 Mo
+      if (logoBytes > tailleMaxAutorisee) {
+        throw new IllegalArgumentException(
+            "Le logo est trop volumineux (" + (logoBytes / 1024) + " Ko). " +
+            "Taille maximale autorisée : " + (tailleMaxAutorisee / 1024 / 1024) + " Mo. " +
+            "Essayez une image plus petite ou comprimée (JPEG/PNG < 10 Mo).");
+      }
+      // Validation de format basique (data URI)
+      if (r.logoUrl().startsWith("data:") && !r.logoUrl().matches("^data:image/(jpeg|png|gif|webp|svg\\+xml);base64,.*")) {
+        throw new IllegalArgumentException(
+            "Format d'image invalide dans le logo. Formats acceptés : JPEG, PNG, GIF, WEBP, SVG.");
+      }
+    }
+
+    Long userId = utilisateurs.findByEmail(email)
+        .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", 0L))
+        .getId();
+    Ferme f = new Ferme();
+    apply(f, r);
+    f.setStatut(StatutFerme.ACTIF);
+    f.setProprietaireId(userId);
+    return ferme(fermes.save(f));
+  }
+
+  @Transactional(readOnly = true)
+  public List<Map<String, Object>> listFermes() {
+    return fermes.findByStatutNot(StatutFerme.ARCHIVEE).stream().map(this::ferme).toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<Map<String, Object>> listMesFermes(String email) {
+    Long userId = utilisateurs.findByEmail(email)
+        .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", 0L))
+        .getId();
+    return fermes.findByProprietaireIdAndStatutNot(userId, StatutFerme.ARCHIVEE)
+        .stream().map(this::ferme).toList();
+  }
+
+  @Transactional(readOnly = true)
+  public Map<String, Object> getFerme(Long id) {
+    return ferme(getFermeEntity(id));
+  }
+
+  public Map<String, Object> updateFerme(Long id, FermeRequest r) {
+    if (r.logoUrl() != null && !r.logoUrl().isBlank()) {
+      int logoBytes = r.logoUrl().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+      int tailleMaxAutorisee = 10 * 1024 * 1024;
+      if (logoBytes > tailleMaxAutorisee) {
+        throw new IllegalArgumentException(
+            "Le logo est trop volumineux (" + (logoBytes / 1024) + " Ko). " +
+            "Taille maximale autorisée : " + (tailleMaxAutorisee / 1024 / 1024) + " Mo. " +
+            "Essayez une image plus petite ou comprimée (JPEG/PNG < 10 Mo).");
+      }
+      if (r.logoUrl().startsWith("data:") && !r.logoUrl().matches("^data:image/(jpeg|png|gif|webp|svg\\+xml);base64,.*")) {
+        throw new IllegalArgumentException(
+            "Format d'image invalide dans le logo. Formats acceptés : JPEG, PNG, GIF, WEBP, SVG.");
+      }
+    }
+    Ferme f = getFermeEntity(id);
+    apply(f, r);
+    return ferme(f);
+  }
+
+  public void archiveFerme(Long id) {
+    Ferme f = getFermeEntity(id);
+    f.setStatut(StatutFerme.ARCHIVEE);
+    for (Site s : sites.findByFermeId(id)) {
+      s.setStatut(StatutSite.ARCHIVE);
+      structures.findBySiteId(s.getId()).forEach(x -> x.setStatut(StatutStructure.ARCHIVE));
+    }
+  }
+
+  public Map<String, Object> changeFermeStatut(Long id, StatutFerme nouveauStatut) {
+    if (nouveauStatut == StatutFerme.ARCHIVEE)
+      throw new IllegalArgumentException(
+          "Utilisez l'endpoint /archiver pour archiver une ferme.");
+    Ferme f = getFermeEntity(id);
+    if (f.getStatut() == StatutFerme.ARCHIVEE)
+      throw new IllegalArgumentException(
+          "Une ferme archivée ne peut plus changer de statut.");
+    f.setStatut(nouveauStatut);
+    return ferme(f);
+  }
+
+  @Transactional(readOnly = true)
+  public Map<String, Object> fermeStats(Long id) {
+    Ferme f = getFermeEntity(id);
+    List<Site> ss = sites.findByFermeId(id);
+    long count = ss.stream().mapToLong(s -> structures.countBySiteId(s.getId())).sum();
+    return Map.of("fermeId", f.getId(), "nombreSites", ss.size(), "nombreStructures", count);
+  }
+
+  public Map<String, Object> createSite(SiteRequest r) {
+    Ferme f = getFermeEntity(r.fermeId());
+    if (f.getStatut() == StatutFerme.ARCHIVEE)
+      throw new IllegalArgumentException("Impossible de créer un site sur une ferme archivée.");
+    if (sites.existsByNomAndFermeId(r.nom(), f.getId()))
+      throw new ConflictException("Un site portant ce nom existe deja dans cette ferme.");
+    Site s = new Site();
+    s.setFerme(f);
+    apply(s, r);
+    s.setStatut(StatutSite.ACTIF);
+    return site(sites.save(s));
+  }
+
+  @Transactional(readOnly = true)
+  public List<Map<String, Object>> listSites(Long fermeId) {
+    getFermeEntity(fermeId);
+    return sites.findByFermeId(fermeId).stream().map(this::site).toList();
+  }
+
+  @Transactional(readOnly = true)
+  public Map<String, Object> getSite(Long id) {
+    return site(getSiteEntity(id));
+  }
+
+  public Map<String, Object> updateSite(Long id, SiteRequest r) {
+    Site s = getSiteEntity(id);
+    Ferme f = getFermeEntity(r.fermeId());
+    if (!s.getFerme().getId().equals(f.getId()) && sites.existsByNomAndFermeId(r.nom(), f.getId()))
+      throw new ConflictException("Un site portant ce nom existe deja dans cette ferme.");
+    s.setFerme(f);
+    apply(s, r);
+    return site(s);
+  }
+
+  public Map<String, Object> siteStatus(Long id, StatutSite status) {
+    Site s = getSiteEntity(id);
+    s.setStatut(status);
+    if (status == StatutSite.ARCHIVE)
+      structures.findBySiteId(id).forEach(x -> x.setStatut(StatutStructure.ARCHIVE));
+    return site(s);
+  }
+
+  @Transactional(readOnly = true)
+  public Map<String, Object> siteStats(Long id) {
+    Site s = getSiteEntity(id);
+    Map<String, Long> types = new TreeMap<>();
+    for (Structure x : structures.findBySiteId(id))
+      types.merge(type(x), 1L, Long::sum);
+    return Map.of("siteId", s.getId(), "nombreStructures", types.values().stream().mapToLong(Long::longValue).sum(),
+        "structuresParType", types, "nombreAnimaux", 0, "nombreEmployes", 0);
+  }
+
+  public Map<String, Object> createStructure(StructureRequest r) {
+    Site site = getSiteEntity(r.siteId());
+    if (site.getStatut() != StatutSite.ACTIF)
+      throw new IllegalArgumentException("Le site doit etre actif.");
+    Structure s = newStructure(r.typeStructure());
+    s.setSite(site);
+    apply(s, r);
+    s.setStatut(StatutStructure.ACTIF);
+    return structure(structures.save(s));
+  }
+
+  @Transactional(readOnly = true)
+  public List<Map<String, Object>> listStructuresForSite(Long id) {
+    getSiteEntity(id);
+    return structures.findBySiteId(id).stream().map(this::structure).toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<Map<String, Object>> listStructuresForFerme(Long id) {
+    getFermeEntity(id);
+    return structures.findBySiteFermeId(id).stream().map(this::structure).toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<Map<String, Object>> listEntrepotsForFerme(Long fermeId) {
+    getFermeEntity(fermeId);
+    return structures.findBySiteFermeId(fermeId).stream()
+        .filter(Entrepot.class::isInstance)
+        .filter(structure -> structure.getStatut() == StatutStructure.ACTIF)
+        .map(this::structure)
+        .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public Map<String, Object> getStructure(Long id) {
+    return structure(getStructureEntity(id));
+  }
+
+  @Transactional(readOnly = true)
+  public StructureRequest duplicateStructure(Long id) {
+    Structure s = getStructureEntity(id);
+    String nomCopie = "Copie - " + s.getNom();
+    String t = type(s);
+
+    Integer capaciteMaxAnimaux = null;
+    String typeVentilation = null;
+    Integer dureeVideSanitaireJours = null;
+    Integer nombreRangees = null;
+    String systemeAbreuvement = null;
+    String typeCloture = null;
+    Boolean accesEau = null;
+    String especesCompatibles = null;
+    java.math.BigDecimal volumeM3 = null;
+    java.math.BigDecimal profondeurM = null;
+    com.reseau_partage.core.entities.SystemeAeration systemeAeration = null;
+    java.math.BigDecimal temperatureCibleCelsius = null;
+    java.math.BigDecimal phCible = null;
+    java.math.BigDecimal capaciteTonnes = null;
+    Boolean temperatureControlee = null;
+    java.math.BigDecimal temperatureMinCelsius = null;
+    java.math.BigDecimal temperatureMaxCelsius = null;
+    String typeSol = null;
+    String cultureActuelle = null;
+    String systemeIrrigation = null;
+    String coordonneesPolygone = null;
+    String typeProduction = null;
+    String systemeChauffage = null;
+    String systemeEvacuation = null;
+    Integer nombreCases = null;
+
+    if (s instanceof Batiment x) {
+      capaciteMaxAnimaux = x.getCapaciteMaxAnimaux();
+      typeVentilation = x.getTypeVentilation();
+      dureeVideSanitaireJours = x.getDureeVideSanitaireJours();
+      nombreRangees = x.getNombreRangees();
+      systemeAbreuvement = x.getSystemeAbreuvement();
+    } else if (s instanceof Enclos x) {
+      capaciteMaxAnimaux = x.getCapaciteMaxAnimaux();
+      typeCloture = x.getTypeCloture();
+      accesEau = x.getAccesEau();
+      especesCompatibles = x.getEspecesCompatibles();
+    } else if (s instanceof Etang x) {
+      volumeM3 = x.getVolumeM3();
+      profondeurM = x.getProfondeurM();
+      systemeAeration = x.getSystemeAeration();
+      temperatureCibleCelsius = x.getTemperatureCibleCelsius();
+      phCible = x.getPhCible();
+    } else if (s instanceof Entrepot x) {
+      capaciteTonnes = x.getCapaciteTonnes();
+      temperatureControlee = x.getTemperatureControlee();
+      temperatureMinCelsius = x.getTemperatureMinCelsius();
+      temperatureMaxCelsius = x.getTemperatureMaxCelsius();
+    } else if (s instanceof Poulailler x) {
+      capaciteMaxAnimaux = x.getCapaciteMaxAnimaux();
+      typeVentilation = x.getTypeVentilation();
+      dureeVideSanitaireJours = x.getDureeVideSanitaireJours();
+      nombreRangees = x.getNombreRangees();
+      systemeAbreuvement = x.getSystemeAbreuvement();
+      typeProduction = x.getTypeProduction();
+      systemeChauffage = x.getSystemeChauffage();
+    } else if (s instanceof Porcherie x) {
+      capaciteMaxAnimaux = x.getCapaciteMaxAnimaux();
+      typeVentilation = x.getTypeVentilation();
+      dureeVideSanitaireJours = x.getDureeVideSanitaireJours();
+      systemeAbreuvement = x.getSystemeAbreuvement();
+      systemeEvacuation = x.getSystemeEvacuation();
+      nombreCases = x.getNombreCases();
+    } else if (s instanceof Parcelle x) {
+      typeSol = x.getTypeSol();
+      cultureActuelle = x.getCultureActuelle();
+      systemeIrrigation = x.getSystemeIrrigation();
+      coordonneesPolygone = x.getCoordonneesPolygone();
+    }
+
+    return new StructureRequest(
+        s.getSite().getId(), nomCopie, t, s.getDescription(), s.getSuperficieM2(),
+        s.getLatitude(), s.getLongitude(),
+        capaciteMaxAnimaux, typeVentilation, dureeVideSanitaireJours, nombreRangees, systemeAbreuvement,
+        typeCloture, accesEau, especesCompatibles,
+        volumeM3, profondeurM, systemeAeration, temperatureCibleCelsius, phCible,
+        capaciteTonnes, temperatureControlee, temperatureMinCelsius, temperatureMaxCelsius,
+        typeSol, cultureActuelle, systemeIrrigation, coordonneesPolygone,
+        typeProduction, systemeChauffage,
+        systemeEvacuation, nombreCases);
+  }
+
+  /**
+   * Récupère les données d'une ferme existante pour pré-remplir un nouveau formulaire.
+   * Le nom est préfixé avec "Copie - " pour indiquer clairement la duplication.
+   * Aucun ID ni propriétaire n'est renvoyé : ces valeurs devront être (re)définies à la création.
+   */
+  @Transactional(readOnly = true)
+  public FermeRequest duplicateFerme(Long id) {
+    Ferme f = getFermeEntity(id);
+    String nomCopie = "Copie - " + f.getNom();
+    return new FermeRequest(
+        nomCopie,
+        f.getPays(),
+        f.getDevise(),
+        f.getFuseauHoraire(),
+        f.getSuperficieTotale(),
+        f.getLogoUrl(),
+        f.getTelephoneContact(),
+        f.getEmailContact(),
+        f.getLocalisation(),
+        f.getTypeActivite(),
+        f.getTypeService()
+    );
+  }
+
+  /**
+   * Récupère les données d'un site existant pour pré-remplir un nouveau formulaire.
+   * Le nom est préfixé avec "Copie - " pour indiquer clairement la duplication.
+   * Le site reste rattaché à la même ferme (modifiable si besoin).
+   * Aucun ID n'est renvoyé : il sera généré à la création.
+   */
+  @Transactional(readOnly = true)
+  public SiteRequest duplicateSite(Long id) {
+    Site s = getSiteEntity(id);
+    String nomCopie = "Copie - " + s.getNom();
+    return new SiteRequest(
+        s.getFerme().getId(),
+        nomCopie,
+        s.getAdresse(),
+        s.getVille(),
+        s.getRegion(),
+        s.getLatitude(),
+        s.getLongitude(),
+        s.getSuperficie(),
+        s.getResponsableNom(),
+        s.getResponsableTelephone()
+    );
+  }
+
+  public Map<String, Object> updateStructure(Long id, StructureRequest r) {
+    Structure s = getStructureEntity(id);
+    if (!type(s).equals(normalizeType(r.typeStructure())))
+      throw new IllegalArgumentException("Le type d'une structure ne peut pas etre modifie.");
+    s.setSite(getSiteEntity(r.siteId()));
+    apply(s, r);
+    return structure(s);
+  }
+
+  public Map<String, Object> structureStatus(Long id, StatutStructure next) {
+    Structure s = getStructureEntity(id);
+    if (!allowed(s.getStatut(), next))
+      throw new StatutTransitionException(s.getStatut(), next);
+    s.setStatut(next);
+    return structure(s);
+  }
+
+  public Map<String, Object> startSanitaryVacancy(Long id) {
+    Structure s = getStructureEntity(id);
+    if (s.getStatut() != StatutStructure.ACTIF)
+      throw new StatutTransitionException(s.getStatut(), StatutStructure.VIDE_SANITAIRE);
+    s.setStatut(StatutStructure.VIDE_SANITAIRE);
+    s.setDateDebutVide(LocalDateTime.now());
+    return structure(s);
+  }
+
+  @Transactional(readOnly = true)
+  public Map<String, Object> occupancy(Long id) {
+    Structure s = getStructureEntity(id);
+    Integer capacity = s instanceof Batiment b ? b.getCapaciteMaxAnimaux()
+        : s instanceof Enclos e ? e.getCapaciteMaxAnimaux()
+            : s instanceof Poulailler p ? p.getCapaciteMaxAnimaux()
+                : s instanceof Porcherie pc ? pc.getCapaciteMaxAnimaux()
+                    : null;
+    long animauxPresents = animalRepository.countByStructureId(id);
+    Map<String, Object> out = new LinkedHashMap<>();
+    out.put("structureId", id);
+    out.put("typeStructure", type(s));
+    out.put("capaciteMaxAnimaux", capacity);
+    out.put("animauxPresents", animauxPresents);
+    out.put("tauxOccupation",
+        capacity == null ? null : (capacity == 0 ? 0 : (double) animauxPresents * 100 / capacity));
+    out.put("niveauAlerte", capacity != null && animauxPresents >= capacity ? "ALERTE" : null);
+    return out;
+  }
+
+  @Transactional(readOnly = true)
+  public List<Map<String, Object>> listAnimalsForStructure(Long id) {
+    getStructureEntity(id);
+    return animalRepository.findByStructureId(id).stream().map(this::animalSummary).toList();
+  }
+
+  private Ferme getFermeEntity(Long id) {
+    return fermes.findById(id).orElseThrow(() -> new ResourceNotFoundException("Ferme", id));
+  }
+
+  private Site getSiteEntity(Long id) {
+    return sites.findById(id).orElseThrow(() -> new ResourceNotFoundException("Site", id));
+  }
+
+  private Structure getStructureEntity(Long id) {
+    return structures.findById(id).orElseThrow(() -> new ResourceNotFoundException("Structure", id));
+  }
+
+  private void apply(Ferme f, FermeRequest r) {
+    f.setNom(r.nom());
+    f.setPays(r.pays());
+    f.setDevise(r.devise());
+    f.setFuseauHoraire(r.fuseauHoraire());
+    f.setSuperficieTotale(r.superficieTotale());
+    f.setLogoUrl(r.logoUrl());
+    f.setTelephoneContact(r.telephoneContact());
+    f.setEmailContact(r.emailContact());
+    f.setLocalisation(r.localisation());
+    f.setTypeActivite(normalizeAndValidate(r.typeActivite(), TYPES_ACTIVITE_AUTORISES, "activite"));
+    f.setTypeService(normalizeAndValidate(r.typeService(), TYPES_SERVICE_AUTORISES, "service"));
+  }
+
+  /**
+   * Liste exhaustive des types d'activité acceptés sur une ferme.
+   * Correspond aux "ids" utilisés côté front (elevationTypes).
+   */
+  private static final Set<String> TYPES_ACTIVITE_AUTORISES = Set.of(
+      // Catégories générales (historique)
+      "agriculture", "elevage", "aviculture", "pisciculture",
+      // Élevages par espèce (front elevationTypes)
+      "bovins", "ovins", "caprins", "porcins", "volailles",
+      "lapins", "equins", "camelins", "aulacodes", "escargots",
+      "canards", "cailles", "pintades", "autruches"
+  );
+
+  /**
+   * Liste exhaustive des services optionnels sur une ferme.
+   * Normalisés (minuscules, sans accents) pour correspondre au front serviceOptions.
+   */
+  private static final Set<String> TYPES_SERVICE_AUTORISES = Set.of(
+      "stock", "vaccination", "comptabilite", "maintenance", "videosurveillance"
+  );
+
+  /**
+   * Normalise et valide une liste de choix libres contre un ensemble autorisé.
+   */
+  private List<String> normalizeAndValidate(List<String> choices, Set<String> allowed, String label) {
+    if (choices == null || choices.isEmpty())
+      return List.of();
+    LinkedHashSet<String> result = new LinkedHashSet<>();
+    for (String choice : choices) {
+      if (choice == null || choice.isBlank())
+        throw new IllegalArgumentException("Chaque " + label + " sélectionné doit être renseigné.");
+      String normalized = Normalizer.normalize(choice.trim().toLowerCase(), Normalizer.Form.NFD)
+          .replaceAll("\\p{M}", "");
+      if (!allowed.contains(normalized))
+        throw new IllegalArgumentException("Type d'" + label + " invalide : " + choice
+            + ". Valeurs acceptées : " + String.join(", ", allowed) + ".");
+      result.add(normalized);
+    }
+    return List.copyOf(result);
+  }
+
+  private void apply(Site s, SiteRequest r) {
+    s.setNom(r.nom());
+    s.setAdresse(r.adresse());
+    s.setVille(r.ville());
+    s.setRegion(r.region());
+    s.setLatitude(r.latitude());
+    s.setLongitude(r.longitude());
+    s.setSuperficie(r.superficie());
+    s.setResponsableNom(r.responsableNom());
+    s.setResponsableTelephone(r.responsableTelephone());
+  }
+
+  private void apply(Structure s, StructureRequest r) {
+    s.setNom(r.nom());
+    s.setDescription(r.description());
+    s.setSuperficieM2(r.superficieM2());
+    s.setLatitude(r.latitude());
+    s.setLongitude(r.longitude());
+    if (s instanceof Batiment x) {
+      x.setCapaciteMaxAnimaux(r.capaciteMaxAnimaux());
+      x.setTypeVentilation(r.typeVentilation());
+      x.setDureeVideSanitaireJours(r.dureeVideSanitaireJours());
+      x.setNombreRangees(r.nombreRangees());
+      x.setSystemeAbreuvement(r.systemeAbreuvement());
+    } else if (s instanceof Enclos x) {
+      x.setCapaciteMaxAnimaux(r.capaciteMaxAnimaux());
+      x.setTypeCloture(r.typeCloture());
+      x.setAccesEau(r.accesEau());
+      x.setEspecesCompatibles(r.especesCompatibles());
+    } else if (s instanceof Etang x) {
+      x.setVolumeM3(r.volumeM3());
+      x.setProfondeurM(r.profondeurM());
+      x.setSystemeAeration(r.systemeAeration());
+      x.setTemperatureCibleCelsius(r.temperatureCibleCelsius());
+      x.setPhCible(r.phCible());
+    } else if (s instanceof Entrepot x) {
+      x.setCapaciteTonnes(r.capaciteTonnes());
+      x.setTemperatureControlee(r.temperatureControlee());
+      x.setTemperatureMinCelsius(r.temperatureMinCelsius());
+      x.setTemperatureMaxCelsius(r.temperatureMaxCelsius());
+    } else if (s instanceof Parcelle x) {
+      x.setTypeSol(r.typeSol());
+      x.setCultureActuelle(r.cultureActuelle());
+      x.setSystemeIrrigation(r.systemeIrrigation());
+      x.setCoordonneesPolygone(r.coordonneesPolygone());
+    } else if (s instanceof Poulailler x) {
+      x.setCapaciteMaxAnimaux(r.capaciteMaxAnimaux());
+      x.setTypeVentilation(r.typeVentilation());
+      x.setDureeVideSanitaireJours(r.dureeVideSanitaireJours());
+      x.setNombreRangees(r.nombreRangees());
+      x.setSystemeAbreuvement(r.systemeAbreuvement());
+      x.setTypeProduction(r.typeProduction());
+      x.setSystemeChauffage(r.systemeChauffage());
+    } else if (s instanceof Porcherie x) {
+      x.setCapaciteMaxAnimaux(r.capaciteMaxAnimaux());
+      x.setTypeSol(r.typeSol());
+      x.setDureeVideSanitaireJours(r.dureeVideSanitaireJours());
+      x.setSystemeAbreuvement(r.systemeAbreuvement());
+      x.setSystemeEvacuation(r.systemeEvacuation());
+      x.setNombreCases(r.nombreCases());
+      x.setTypeVentilation(r.typeVentilation());
+    }
+  }
+
+  private Structure newStructure(String value) {
+    return switch (normalizeType(value)) {
+      case "BATIMENT" -> new Batiment();
+      case "ENCLOS" -> new Enclos();
+      case "ETANG" -> new Etang();
+      case "ENTREPOT" -> new Entrepot();
+      case "PARCELLE" -> new Parcelle();
+      case "POULAILLER" -> new Poulailler();
+      case "PORCHERIE" -> new Porcherie();
+      default -> throw new IllegalArgumentException(
+          "Type de structure inconnu : " + value +
+              ". Valeurs acceptées : BATIMENT, ENCLOS, ETANG, ENTREPOT, PARCELLE, POULAILLER, PORCHERIE.");
+    };
+  }
+
+  private String normalizeType(String v) {
+    return v.trim().toUpperCase(Locale.ROOT);
+  }
+
+  private String type(Structure s) {
+    if (s instanceof Batiment)
+      return "BATIMENT";
+    if (s instanceof Enclos)
+      return "ENCLOS";
+    if (s instanceof Etang)
+      return "ETANG";
+    if (s instanceof Entrepot)
+      return "ENTREPOT";
+    if (s instanceof Poulailler)
+      return "POULAILLER";
+    if (s instanceof Porcherie)
+      return "PORCHERIE";
+    return "PARCELLE";
+  }
+
+  private boolean allowed(StatutStructure f, StatutStructure t) {
+    return (f == StatutStructure.ACTIF && (t == StatutStructure.VIDE_SANITAIRE || t == StatutStructure.ARCHIVE))
+        || (f == StatutStructure.VIDE_SANITAIRE && t == StatutStructure.EN_DESINFECTION)
+        || (f == StatutStructure.EN_DESINFECTION && t == StatutStructure.PRET)
+        || (f == StatutStructure.PRET && t == StatutStructure.ACTIF);
+  }
+
+  private Map<String, Object> animalSummary(Animal animal) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("id", animal.getId());
+    m.put("codeUnique", animal.getCodeUnique());
+    m.put("nom", animal.getNom());
+    m.put("espece", animal.getEspece());
+    m.put("statut", animal.getStatut());
+    m.put("structureId", animal.getStructure() != null ? animal.getStructure().getId() : null);
+    m.put("structureNom", animal.getStructure() != null ? animal.getStructure().getNom() : null);
+    m.put("bandeId", animal.getBande() != null ? animal.getBande().getId() : null);
+    m.put("bandeNom", animal.getBande() != null ? animal.getBande().getNom() : null);
+    return m;
+  }
+
+  private Map<String, Object> ferme(Ferme f) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("id", f.getId());
+    m.put("proprietaireId", f.getProprietaireId());
+    m.put("nom", f.getNom());
+    m.put("pays", f.getPays());
+    m.put("devise", f.getDevise());
+    m.put("fuseauHoraire", f.getFuseauHoraire());
+    m.put("superficieTotale", f.getSuperficieTotale());
+    m.put("logoUrl", f.getLogoUrl());
+    m.put("telephoneContact", f.getTelephoneContact());
+    m.put("emailContact", f.getEmailContact());
+    m.put("localisation", f.getLocalisation());
+    m.put("typeActivite", f.getTypeActivite());
+    m.put("typeService", f.getTypeService());
+    m.put("statut", f.getStatut());
+    m.put("dateCreation", f.getDateCreation());
+    m.putAll(fermeStats(f.getId()));
+    return m;
+  }
+
+  private Map<String, Object> site(Site s) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("id", s.getId());
+    m.put("fermeId", s.getFerme().getId());
+    m.put("fermeNom", s.getFerme().getNom());
+    m.put("nom", s.getNom());
+    m.put("adresse", s.getAdresse());
+    m.put("ville", s.getVille());
+    m.put("region", s.getRegion());
+    m.put("latitude", s.getLatitude());
+    m.put("longitude", s.getLongitude());
+    m.put("superficie", s.getSuperficie());
+    m.put("responsableNom", s.getResponsableNom());
+    m.put("responsableTelephone", s.getResponsableTelephone());
+    m.put("statut", s.getStatut());
+    m.put("dateCreation", s.getDateCreation());
+    m.put("nombreStructures", structures.countBySiteId(s.getId()));
+    return m;
+  }
+
+  private Map<String, Object> structure(Structure s) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    // ── Champs communs ────────────────────────────────────────────────────────
+    m.put("id", s.getId());
+    m.put("siteId", s.getSite().getId());
+    m.put("siteNom", s.getSite().getNom());
+    m.put("fermeId", s.getSite().getFerme().getId());
+    m.put("fermeNom", s.getSite().getFerme().getNom());
+    m.put("nom", s.getNom());
+    m.put("typeStructure", type(s));
+    m.put("description", s.getDescription());
+    m.put("superficieM2", s.getSuperficieM2());
+    m.put("latitude", s.getLatitude());
+    m.put("longitude", s.getLongitude());
+    m.put("statut", s.getStatut());
+    m.put("dateCreation", s.getDateCreation());
+    m.put("dateDebutVide", s.getDateDebutVide());
+    m.put("nombreAnimaux", animalRepository.countByStructureId(s.getId()));
+    m.put("animaux", animalRepository.findByStructureId(s.getId()).stream().map(this::animalSummary).toList());
+    // ── Attributs spécifiques selon le type ──────────────────────────────────
+    if (s instanceof Batiment x) {
+      m.put("capaciteMaxAnimaux", x.getCapaciteMaxAnimaux());
+      m.put("typeVentilation", x.getTypeVentilation());
+      m.put("dureeVideSanitaireJours", x.getDureeVideSanitaireJours());
+      m.put("nombreRangees", x.getNombreRangees());
+      m.put("systemeAbreuvement", x.getSystemeAbreuvement());
+    } else if (s instanceof Enclos x) {
+      m.put("capaciteMaxAnimaux", x.getCapaciteMaxAnimaux());
+      m.put("typeCloture", x.getTypeCloture());
+      m.put("accesEau", x.getAccesEau());
+      m.put("especesCompatibles", x.getEspecesCompatibles());
+    } else if (s instanceof Etang x) {
+      m.put("volumeM3", x.getVolumeM3());
+      m.put("profondeurM", x.getProfondeurM());
+      m.put("systemeAeration", x.getSystemeAeration());
+      m.put("temperatureCibleCelsius", x.getTemperatureCibleCelsius());
+      m.put("phCible", x.getPhCible());
+    } else if (s instanceof Entrepot x) {
+      m.put("capaciteTonnes", x.getCapaciteTonnes());
+      m.put("temperatureControlee", x.getTemperatureControlee());
+      m.put("temperatureMinCelsius", x.getTemperatureMinCelsius());
+      m.put("temperatureMaxCelsius", x.getTemperatureMaxCelsius());
+    } else if (s instanceof Poulailler x) {
+      m.put("capaciteMaxAnimaux", x.getCapaciteMaxAnimaux());
+      m.put("typeVentilation", x.getTypeVentilation());
+      m.put("dureeVideSanitaireJours", x.getDureeVideSanitaireJours());
+      m.put("nombreRangees", x.getNombreRangees());
+      m.put("systemeAbreuvement", x.getSystemeAbreuvement());
+      m.put("typeProduction", x.getTypeProduction());
+      m.put("systemeChauffage", x.getSystemeChauffage());
+    } else if (s instanceof Porcherie x) {
+      m.put("capaciteMaxAnimaux", x.getCapaciteMaxAnimaux());
+      m.put("typeSol", x.getTypeSol());
+      m.put("dureeVideSanitaireJours", x.getDureeVideSanitaireJours());
+      m.put("systemeAbreuvement", x.getSystemeAbreuvement());
+      m.put("systemeEvacuation", x.getSystemeEvacuation());
+      m.put("nombreCases", x.getNombreCases());
+      m.put("typeVentilation", x.getTypeVentilation());
+    } else if (s instanceof Parcelle x) {
+      m.put("typeSol", x.getTypeSol());
+      m.put("cultureActuelle", x.getCultureActuelle());
+      m.put("systemeIrrigation", x.getSystemeIrrigation());
+      m.put("coordonneesPolygone", x.getCoordonneesPolygone());
+    }
+    return m;
+  }
+}

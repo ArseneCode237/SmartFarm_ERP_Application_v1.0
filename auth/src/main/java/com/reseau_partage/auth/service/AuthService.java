@@ -8,7 +8,6 @@ import com.reseau_partage.auth.dto.ProfileResponse;
 import com.reseau_partage.auth.exception.ConflictException;
 import com.reseau_partage.auth.security.JwtUtils;
 import com.reseau_partage.core.entities.Utilisateur;
-import com.reseau_partage.core.entities.Profil;
 import com.reseau_partage.core.mappers.UtilisateurMapper;
 import com.reseau_partage.core.repository.UtilisateurRepository;
 import com.reseau_partage.core.repository.ProfilRepository;
@@ -26,10 +25,6 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.time.Instant;
 import java.util.Map;
-import java.util.List;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.text.Normalizer;
 import java.util.UUID;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -71,20 +66,6 @@ public class AuthService {
         if (telephone != null && utilisateurRepository.existsByTelephone(telephone)) {
             throw new ConflictException("Numero de telephone deja utilise");
         }
-        String fermeNom = normalizeFermeNom(request.getFermeNom());
-        if (fermeNom != null && utilisateurRepository.existsByStructureNomIgnoreCase(fermeNom)) {
-            throw new ConflictException("Nom de ferme deja utilise");
-        }
-        List<String> typeActivites = normalizeAndValidateChoices(
-                request.getTypeActivite(),
-                Set.of("agriculture", "elevage", "aviculture", "pisciculture"),
-                "activite"
-        );
-        List<String> typeServices = normalizeAndValidateChoices(
-                request.getTypeService(),
-                Set.of("stock", "vaccination", "comptabilite", "maintenance", "videosurveillance"),
-                "service"
-        );
         validateSexe(request.getSexe());
 
         Utilisateur utilisateur = new Utilisateur();
@@ -92,12 +73,8 @@ public class AuthService {
         utilisateur.setPrenom(request.getPrenom());
         utilisateur.setEmail(request.getEmail());
         utilisateur.setTelephone(telephone);
-        utilisateur.setStructureId(request.getFermeId());
-        utilisateur.setStructureNom(fermeNom);
-        utilisateur.setTypeActivite(typeActivites);
-        utilisateur.setTypeService(typeServices);
         utilisateur.setSexe(request.getSexe());
-        utilisateur.setLocalisation(request.getLocalisation());
+        utilisateur.setAdresse(request.getAdresse());
         utilisateur.setMotDePasse(passwordEncoder.encode(request.getPassword()));
         utilisateur.setActif(true);
         utilisateur.setTentative_echec(0);
@@ -119,61 +96,12 @@ public class AuthService {
         }
     }
 
-    private void validateTypeActivite(String typeActivite) {
-        if (typeActivite == null) {
-            return;
-        }
-        String normalized = typeActivite.trim().toLowerCase();
-        if (!normalized.equals("agriculture") && !normalized.equals("elevage") && !normalized.equals("aviculture") && !normalized.equals("pisciculture")) {
-            throw new IllegalArgumentException("Type d'activite invalide. Valeurs acceptées : agriculture, elevage, aviculture, pisciculture.");
-        }
-    }
-
     private String normalizeTelephone(String telephone) {
         if (telephone == null || telephone.isBlank()) {
             return null;
         }
         String normalized = telephone.trim().replaceAll("[\\s().-]", "");
         return normalized.startsWith("00") ? "+" + normalized.substring(2) : normalized;
-    }
-
-    private String normalizeFermeNom(String fermeNom) {
-        if (fermeNom == null || fermeNom.isBlank()) {
-            return null;
-        }
-        return fermeNom.trim();
-    }
-
-    private void validateTypeService(String typeService) {
-        if (typeService == null) {
-            return;
-        }
-        String normalized = typeService.trim().toLowerCase();
-        if (!normalized.equals("stock") && !normalized.equals("vaccination") && !normalized.equals("comptabilite") && !normalized.equals("maintenance") && !normalized.equals("videosurveillance")) {
-            throw new IllegalArgumentException("Type de service invalide. Valeurs acceptées : stock, vaccination, comptabilite, maintenance, videosurveillance.");
-        }
-    }
-
-    private List<String> normalizeAndValidateChoices(List<String> choices, Set<String> allowedChoices, String label) {
-        if (choices == null || choices.isEmpty()) {
-            return List.of();
-        }
-
-        LinkedHashSet<String> normalizedChoices = new LinkedHashSet<>();
-        for (String choice : choices) {
-            if (choice == null || choice.isBlank()) {
-                throw new IllegalArgumentException("Chaque " + label + " selectionne doit etre renseigne.");
-            }
-
-            String normalized = Normalizer.normalize(choice.trim().toLowerCase(), Normalizer.Form.NFD)
-                    .replaceAll("\\p{M}", "");
-            if (!allowedChoices.contains(normalized)) {
-                throw new IllegalArgumentException("Type d'" + label + " invalide : " + choice
-                        + ". Valeurs acceptees : " + String.join(", ", allowedChoices) + ".");
-            }
-            normalizedChoices.add(normalized);
-        }
-        return List.copyOf(normalizedChoices);
     }
 
     @Transactional
@@ -273,27 +201,8 @@ public class AuthService {
             }
             utilisateur.setTelephone(telephone);
         }
-        if (request.getFermeId() != null) {
-            utilisateur.setStructureId(request.getFermeId().trim());
-        }
-        if (request.getFermeNom() != null) {
-            String fermeNom = normalizeFermeNom(request.getFermeNom());
-            if (fermeNom != null && !fermeNom.equalsIgnoreCase(utilisateur.getStructureNom())
-                    && utilisateurRepository.existsByStructureNomIgnoreCase(fermeNom)) {
-                throw new ConflictException("Ce nom de ferme est deja utilise.");
-            }
-            utilisateur.setStructureNom(fermeNom);
-        }
-        if (request.getTypeActivite() != null) {
-            utilisateur.setTypeActivite(normalizeAndValidateChoices(request.getTypeActivite(),
-                    Set.of("agriculture", "elevage", "aviculture", "pisciculture"), "activite"));
-        }
-        if (request.getTypeService() != null) {
-            utilisateur.setTypeService(normalizeAndValidateChoices(request.getTypeService(),
-                    Set.of("stock", "vaccination", "comptabilite", "maintenance", "videosurveillance"), "service"));
-        }
-        if (request.getLocalisation() != null) {
-            utilisateur.setLocalisation(request.getLocalisation().trim());
+        if (request.getAdresse() != null) {
+            utilisateur.setAdresse(request.getAdresse().trim());
         }
         if (request.getSexe() != null) {
             validateSexe(request.getSexe());
@@ -333,7 +242,7 @@ public class AuthService {
         String refreshToken = jwtUtils.generateRefreshToken(userDetails, session.getId());
         session.setTokenHash(hash(refreshToken));
         sessionRepository.save(session);
-        String token = jwtUtils.generateToken(userDetails, Map.of("sid", session.getId(), "fermeId", String.valueOf(utilisateur.getStructureId())));
+        String token = jwtUtils.generateToken(userDetails, Map.of("sid", session.getId()));
         return AuthResponse.builder().message(message).token(token).refreshToken(refreshToken)
                 .email(utilisateur.getEmail())
                 .user(UtilisateurMapper.toPojo(utilisateur))
