@@ -95,13 +95,38 @@ public record BandeRequest(
     }
 
     /**
+     * Vérifie si la requête concerne des volailles (poulet, dinde, canard, pintade, pigeon)
+     */
+    public boolean isVolaille() {
+        return espece != null && (
+            espece == Espece.POULET ||
+            espece == Espece.DINDE ||
+            espece == Espece.CANARD ||
+            espece == Espece.PINTADE ||
+            espece == Espece.PIGEON
+        );
+    }
+
+    /**
+     * Vérifie si la requête concerne des porcins
+     */
+    public boolean isPorcin() {
+        return espece != null && espece == Espece.PORC;
+    }
+
+    /**
      * Récupère la catégorie appropriée selon l'espèce
      */
     public Categorie getEffectiveCategorie() {
         if (categorie != null) {
             return categorie;
         }
-        // Valeur par défaut selon l'espèce
-        return isPoisson() ? Categorie.JUVENILE : Categorie.PORCELET;
+        if (isPoisson()) {
+            return Categorie.JUVENILE;
+        }
+        if (isVolaille()) {
+            return Categorie.POUSSIN;
+        }
+        return Categorie.PORCELET;
     }
 }
