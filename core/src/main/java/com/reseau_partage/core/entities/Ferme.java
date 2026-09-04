@@ -46,7 +46,7 @@ public class Ferme {
     private BigDecimal superficieTotale;
 
     @JdbcTypeCode(SqlTypes.LONGVARCHAR)
-    @Column(name = "logo_url")
+    @Column(name = "logo_url", columnDefinition = "TEXT")
     private String logoUrl;
 
     @Column(name = "telephone_contact", length = 20)
