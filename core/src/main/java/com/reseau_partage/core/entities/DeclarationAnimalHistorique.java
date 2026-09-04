@@ -22,11 +22,11 @@ public class DeclarationAnimalHistorique {
     private ActionHistorique action;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "anciennes_valeurs")
+    @Column(name = "anciennes_valeurs", columnDefinition = "jsonb")
     private Map<String, Object> anciennesValeurs;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "nouvelles_valeurs")
+    @Column(name = "nouvelles_valeurs", columnDefinition = "jsonb")
     private Map<String, Object> nouvellesValeurs;
 
     @Column(name = "utilisateur_id")
