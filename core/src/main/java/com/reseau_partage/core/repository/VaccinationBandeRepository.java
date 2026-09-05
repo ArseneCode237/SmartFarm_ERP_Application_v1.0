@@ -17,4 +17,5 @@ public interface VaccinationBandeRepository extends JpaRepository<VaccinationBan
     @Query("select v from VaccinationBande v where v.bandeId = :bandeId and v.dateFinDelaiAttente >= :today")
     List<VaccinationBande> findDelaisAttenteActifs(@Param("bandeId") Long bandeId, @Param("today") LocalDate today);
     List<VaccinationBande> findByFermeIdAndStatut(Long fermeId, com.reseau_partage.core.entities.enumtypes.StatutVaccination statut);
+    List<VaccinationBande> findByFermeIdOrderByDateVaccinationDesc(Long fermeId);
 }
