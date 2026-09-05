@@ -52,7 +52,7 @@ public class VaccinationBandeService {
         BigDecimal dose = request.doseMlParTete() == null ? vaccin.getDoseMl() : request.doseMlParTete();
         VaccinationBande entity = new VaccinationBande();
         entity.setBandeId(request.bandeId()); entity.setBandeNom(text(bande, "nom")); entity.setEspece(espece.value());
-        entity.setFermeId(longValue(bande, "fermeId")); entity.setVaccin(vaccin); entity.setNumeroLotVaccin(request.numeroLotVaccin());
+        entity.setFermeId(request.fermeId()); entity.setVaccin(vaccin); entity.setNumeroLotVaccin(request.numeroLotVaccin());
         entity.setDateExpirationLot(request.dateExpirationLot()); entity.setTypeVaccination(request.typeVaccination() == null ? TypeVaccination.PREVENTIVE : request.typeVaccination());
         entity.setNumeroDoseDansProtocole(request.numeroDoseDansProtocole()); entity.setDateVaccination(date);
         entity.setAgeBandeJoursAuMoment(age(dateEntree(bande), date)); entity.setVoieAdministration(request.voieAdministration() == null ? vaccin.getVoieAdministration() : request.voieAdministration());
@@ -88,6 +88,7 @@ public class VaccinationBandeService {
     @Transactional(readOnly = true) public Map<String, Object> statut(Long bandeId) { List<VaccinationBandeResponse> historique = historique(bandeId); return Map.of("bandeId", bandeId, "nombreVaccinations", historique.size(), "dernieresVaccinations", historique); }
     @Transactional(readOnly = true) public List<VaccinationBandeResponse> rappels(Long fermeId, int horizon) { return repository.findRappelsAVenir(fermeId, LocalDate.now(), LocalDate.now().plusDays(horizon)).stream().map(this::response).toList(); }
     @Transactional(readOnly = true) public List<VaccinationBandeResponse> planifiees(Long fermeId) { return repository.findByFermeIdAndStatut(fermeId, StatutVaccination.PLANIFIEE).stream().map(this::response).toList(); }
+    @Transactional(readOnly = true) public List<VaccinationBandeResponse> toutesParFerme(Long fermeId) { return repository.findByFermeIdOrderByDateVaccinationDesc(fermeId).stream().map(this::response).toList(); }
     @Transactional(readOnly = true) public List<VaccinationBandeResponse> delaiAttente(Long bandeId) { return repository.findDelaisAttenteActifs(bandeId, LocalDate.now()).stream().map(this::response).toList(); }
     @Scheduled(cron = "0 0 6 * * *")
     @Transactional
