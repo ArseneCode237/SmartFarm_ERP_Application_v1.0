@@ -30,6 +30,7 @@ public class VaccinationBandeController {
     @GetMapping("/bande/{bandeId}/delai-attente") public Map<String, Object> delai(@PathVariable Long bandeId) { return Map.of("content", service.delaiAttente(bandeId)); }
     @GetMapping("/rappels") public Map<String, Object> rappels(@RequestParam Long fermeId, @RequestParam(defaultValue = "30") int horizon) { return Map.of("content", service.rappels(fermeId, horizon)); }
     @GetMapping("/planifiees") public Map<String, Object> planifiees(@RequestParam Long fermeId) { return Map.of("content", service.planifiees(fermeId)); }
+    @GetMapping("/ferme/{fermeId}") public Map<String, Object> toutesParFerme(@PathVariable Long fermeId) { return Map.of("content", service.toutesParFerme(fermeId)); }
     @PostMapping("/plan/{planId}/bande/{bandeId}") public Map<String, Object> appliquer(@PathVariable Long planId, @PathVariable Long bandeId) { return Map.of("content", service.appliquerPlan(bandeId, planId)); }
     @PatchMapping("/{id}/annuler") public Map<String, Object> annuler(@PathVariable Long id) { return Map.of("data", service.annuler(id), "message", "Vaccination planifiée annulée."); }
 }
