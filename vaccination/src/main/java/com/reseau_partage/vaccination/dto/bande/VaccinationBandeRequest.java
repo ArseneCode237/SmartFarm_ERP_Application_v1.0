@@ -12,6 +12,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record VaccinationBandeRequest(
         @NotNull Long bandeId,
+        @NotNull Long fermeId,
         @NotNull Long vaccinId,
         String numeroLotVaccin,
         LocalDate dateExpirationLot,
