@@ -20,7 +20,7 @@ public class JwtUtils {
     @Value("${jwt.secret:5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437}")
     private String secret;
 
-    @Value("${jwt.expiration:900000}")
+    @Value("${jwt.expiration:86400000}")
     private long jwtExpiration;
 
     @Value("${jwt.refresh-expiration:2592000000}")
