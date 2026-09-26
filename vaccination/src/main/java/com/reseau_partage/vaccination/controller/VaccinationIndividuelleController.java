@@ -32,4 +32,5 @@ public class VaccinationIndividuelleController {
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=carnet-vaccinal-" + animalId + ".pdf").body(service.certificat(animalId));
     }
     @GetMapping("/rappels") public Map<String, Object> rappels(@RequestParam Long fermeId, @RequestParam(defaultValue = "30") int horizon) { return Map.of("content", service.rappels(fermeId, horizon)); }
+    @PostMapping("/plan/{planId}/animal/{animalId}") public Map<String, Object> appliquerPlan(@PathVariable Long planId, @PathVariable Long animalId) { return Map.of("content", service.appliquerPlan(animalId, planId)); }
 }

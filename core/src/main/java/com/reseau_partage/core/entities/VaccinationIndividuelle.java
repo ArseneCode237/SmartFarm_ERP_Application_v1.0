@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.reseau_partage.core.entities.enumtypes.StatutVaccination;
 import com.reseau_partage.core.entities.enumtypes.TypeVaccination;
 import com.reseau_partage.core.entities.enumtypes.VoieAdministration;
 
@@ -37,11 +38,14 @@ public class VaccinationIndividuelle {
     @Column(name = "age_animal_jours_au_moment") private Integer ageAnimalJoursAuMoment;
     @Enumerated(EnumType.STRING) @Column(name = "voie_administration") private VoieAdministration voieAdministration;
     @Column(name = "dose_ml", precision = 6, scale = 2) private BigDecimal doseMl;
+    @Enumerated(EnumType.STRING) @Column(nullable = false) private StatutVaccination statut = StatutVaccination.EFFECTUEE;
     @Column(name = "date_prochain_rappel") private LocalDate dateProchaineRappel;
     @Column(name = "date_fin_delai_attente") private LocalDate dateFinDelaiAttente;
     @Column(name = "reaction_observee", length = 200) private String reactionObservee;
     @Column(name = "veterinaire_nom", length = 100) private String veterinaireNom;
     @Column(name = "operateur_nom", length = 100) private String operateurNom;
+    @Column(name = "plan_vaccination_id") private Long planVaccinationId;
+    @Column(name = "etape_plan_id") private Long etapePlanId;
     @Column(columnDefinition = "TEXT") private String notes;
     @Column(name = "date_creation", updatable = false) private LocalDateTime dateCreation;
     public VaccinationIndividuelle() { }
@@ -60,6 +64,9 @@ public class VaccinationIndividuelle {
     public Integer getAgeAnimalJoursAuMoment() { return ageAnimalJoursAuMoment; } public void setAgeAnimalJoursAuMoment(Integer v) { ageAnimalJoursAuMoment = v; }
     public VoieAdministration getVoieAdministration() { return voieAdministration; } public void setVoieAdministration(VoieAdministration v) { voieAdministration = v; }
     public BigDecimal getDoseMl() { return doseMl; } public void setDoseMl(BigDecimal v) { doseMl = v; }
+    public StatutVaccination getStatut() { return statut; } public void setStatut(StatutVaccination v) { statut = v; }
+    public Long getPlanVaccinationId() { return planVaccinationId; } public void setPlanVaccinationId(Long v) { planVaccinationId = v; }
+    public Long getEtapePlanId() { return etapePlanId; } public void setEtapePlanId(Long v) { etapePlanId = v; }
     public LocalDate getDateProchaineRappel() { return dateProchaineRappel; } public void setDateProchaineRappel(LocalDate v) { dateProchaineRappel = v; }
     public LocalDate getDateFinDelaiAttente() { return dateFinDelaiAttente; } public void setDateFinDelaiAttente(LocalDate v) { dateFinDelaiAttente = v; }
     public String getReactionObservee() { return reactionObservee; } public void setReactionObservee(String v) { reactionObservee = v; }

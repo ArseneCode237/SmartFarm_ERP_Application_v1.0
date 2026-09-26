@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.reseau_partage.core.entities.Espece;
+import com.reseau_partage.core.entities.enumtypes.StatutVaccination;
 import com.reseau_partage.core.entities.enumtypes.TypeVaccination;
 import com.reseau_partage.core.entities.enumtypes.VoieAdministration;
 
@@ -13,6 +14,7 @@ public record VaccinationIndividuelleResponse(
         Long vaccinId, String vaccinNom, String numeroLotVaccin, LocalDate dateExpirationLot,
         TypeVaccination typeVaccination, Integer numeroDoseDansProtocole, LocalDate dateVaccination,
         Integer ageAnimalJoursAuMoment, VoieAdministration voieAdministration, BigDecimal doseMl,
+        StatutVaccination statut, Long planVaccinationId, Long etapePlanId,
         LocalDate dateProchaineRappel, LocalDate dateFinDelaiAttente, String reactionObservee,
         String veterinaireNom, String operateurNom, String notes, LocalDateTime dateCreation) {
 }

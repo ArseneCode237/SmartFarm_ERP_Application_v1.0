@@ -13,6 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.reseau_partage.core.entities.Vaccin;
 import com.reseau_partage.core.entities.VaccinationIndividuelle;
+import com.reseau_partage.core.entities.EtapePlanVaccination;
+import com.reseau_partage.core.entities.PlanVaccination;
+import com.reseau_partage.core.entities.Espece;
+import com.reseau_partage.core.repository.PlanVaccinationRepository;
 import com.reseau_partage.core.repository.VaccinRepository;
 import com.reseau_partage.core.repository.VaccinationIndividuelleRepository;
 import com.reseau_partage.vaccination.client.AnimauxClient;
@@ -29,12 +33,13 @@ import com.itextpdf.layout.element.Paragraph;
 public class VaccinationIndividuelleService {
     private final VaccinationIndividuelleRepository repository;
     private final VaccinRepository vaccinRepository;
+    private final PlanVaccinationRepository planRepository;
     private final AnimauxClient animauxClient;
     private final NotificationClient notificationClient;
 
     public VaccinationIndividuelleService(VaccinationIndividuelleRepository repository, VaccinRepository vaccinRepository,
-            AnimauxClient animauxClient, NotificationClient notificationClient) {
-        this.repository = repository; this.vaccinRepository = vaccinRepository; this.animauxClient = animauxClient; this.notificationClient = notificationClient;
+            PlanVaccinationRepository planRepository, AnimauxClient animauxClient, NotificationClient notificationClient) {
+        this.repository = repository; this.vaccinRepository = vaccinRepository; this.planRepository = planRepository; this.animauxClient = animauxClient; this.notificationClient = notificationClient;
     }
 
     @Transactional
@@ -55,6 +60,42 @@ public class VaccinationIndividuelleService {
         VaccinationIndividuelle saved = repository.save(value);
         if (saved.getDateProchaineRappel() != null) notificationClient.sendAlert("RAPPEL_VACCIN_INDIVIDUEL", "NORMALE", "Rappel de vaccination de l'animal " + saved.getAnimalCode(), saved.getAnimalId());
         return response(saved);
+    }
+
+    @Transactional
+    public List<VaccinationIndividuelleResponse> appliquerPlan(Long animalId, Long planId) {
+        Map<String, Object> animal = animauxClient.getAnimal(animalId);
+        PlanVaccination plan = planRepository.findById(planId).orElseThrow(() -> new ResourceNotFoundException("PlanVaccination", planId));
+        String especeText = text(animal, "espece");
+        Espece espece = Espece.valueOf(especeText);
+        if (!plan.getEspece().equals(espece)) throw new IllegalArgumentException("Le plan n'est pas compatible avec l'espèce de l'animal.");
+        LocalDate naissance = dateNaissance(animal);
+        LocalDate today = LocalDate.now();
+        int ageActuel = age(naissance, today);
+        return plan.getEtapes().stream()
+            .filter(etape -> etape.getAgeCibleJours() >= ageActuel)
+            .map(etape -> planifier(animalId, animal, plan, etape, naissance))
+            .map(repository::save)
+            .map(this::response)
+            .toList();
+    }
+
+    private VaccinationIndividuelle planifier(Long animalId, Map<String, Object> animal, PlanVaccination plan, EtapePlanVaccination etape, LocalDate naissance) {
+        VaccinationIndividuelle entity = new VaccinationIndividuelle();
+        entity.setAnimalId(animalId);
+        entity.setAnimalCode(text(animal, "codeUnique"));
+        entity.setEspece(plan.getEspece());
+        entity.setFermeId(longValue(animal, "fermeId"));
+        entity.setVaccin(etape.getVaccin());
+        entity.setNumeroDoseDansProtocole(etape.getOrdreEtape());
+        entity.setDateVaccination(naissance.plusDays(etape.getAgeCibleJours()));
+        entity.setAgeAnimalJoursAuMoment(etape.getAgeCibleJours());
+        entity.setVoieAdministration(etape.getVoieAdministration());
+        entity.setDoseMl(etape.getDoseMl());
+        entity.setStatut(com.reseau_partage.core.entities.enumtypes.StatutVaccination.PLANIFIEE);
+        entity.setPlanVaccinationId(plan.getId());
+        entity.setEtapePlanId(etape.getId());
+        return entity;
     }
 
     @Transactional(readOnly = true) public List<VaccinationIndividuelleResponse> historique(Long animalId) { return repository.findHistoriqueComplet(animalId).stream().map(this::response).toList(); }
@@ -83,5 +124,6 @@ public class VaccinationIndividuelleService {
     private int age(LocalDate date, LocalDate today) { return (int) ChronoUnit.DAYS.between(date, today); }
     private String text(Map<String, Object> data, String key) { return data.get(key) == null ? null : data.get(key).toString(); }
     private Long longValue(Map<String, Object> data, String key) { return data.get(key) == null ? null : Long.valueOf(data.get(key).toString()); }
-    private VaccinationIndividuelleResponse response(VaccinationIndividuelle v) { return new VaccinationIndividuelleResponse(v.getId(), v.getAnimalId(), v.getAnimalCode(), v.getEspece(), v.getFermeId(), v.getVaccin().getId(), v.getVaccin().getNom(), v.getNumeroLotVaccin(), v.getDateExpirationLot(), v.getTypeVaccination(), v.getNumeroDoseDansProtocole(), v.getDateVaccination(), v.getAgeAnimalJoursAuMoment(), v.getVoieAdministration(), v.getDoseMl(), v.getDateProchaineRappel(), v.getDateFinDelaiAttente(), v.getReactionObservee(), v.getVeterinaireNom(), v.getOperateurNom(), v.getNotes(), v.getDateCreation()); }
+    private VaccinationIndividuelleResponse response(VaccinationIndividuelle v) { return new VaccinationIndividuelleResponse(v.getId(), v.getAnimalId(), v.getAnimalCode(), v.getEspece(), v.getFermeId(), v.getVaccin().getId(), v.getVaccin().getNom(), v.getNumeroLotVaccin(), v.getDateExpirationLot(), v.getTypeVaccination(), v.getNumeroDoseDansProtocole(), v.getDateVaccination(), v.getAgeAnimalJoursAuMoment(), v.getVoieAdministration(), v.getDoseMl(), v.getStatut(), v.getPlanVaccinationId(), v.getEtapePlanId(), v.getDateProchaineRappel(), v.getDateFinDelaiAttente(), v.getReactionObservee(), v.getVeterinaireNom(), v.getOperateurNom(), v.getNotes(), v.getDateCreation()); }
 }
+
