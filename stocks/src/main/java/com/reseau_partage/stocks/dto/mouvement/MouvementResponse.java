@@ -18,6 +18,9 @@ public class MouvementResponse {
     private MotifMouvement motif;
     private String destinationOrigine;
     private Long bandeId;
+    private String bandeNom;
+    private Long animalId;
+    private String animalCode;
     private String fournisseurNom;
     private String numeroBon;
     private BigDecimal coutUnitaire;
@@ -37,6 +40,9 @@ public class MouvementResponse {
     public MotifMouvement getMotif() { return motif; } public void setMotif(MotifMouvement v) { motif = v; }
     public String getDestinationOrigine() { return destinationOrigine; } public void setDestinationOrigine(String v) { destinationOrigine = v; }
     public Long getBandeId() { return bandeId; } public void setBandeId(Long v) { bandeId = v; }
+    public String getBandeNom() { return bandeNom; } public void setBandeNom(String v) { bandeNom = v; }
+    public Long getAnimalId() { return animalId; } public void setAnimalId(Long v) { animalId = v; }
+    public String getAnimalCode() { return animalCode; } public void setAnimalCode(String v) { animalCode = v; }
     public String getFournisseurNom() { return fournisseurNom; } public void setFournisseurNom(String v) { fournisseurNom = v; }
     public String getNumeroBon() { return numeroBon; } public void setNumeroBon(String v) { numeroBon = v; }
     public BigDecimal getCoutUnitaire() { return coutUnitaire; } public void setCoutUnitaire(BigDecimal v) { coutUnitaire = v; }
