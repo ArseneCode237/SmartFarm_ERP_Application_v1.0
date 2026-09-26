@@ -67,7 +67,7 @@ public class AlerteStockService {
                     "Stock critique",
                     "Stock critique pour " + article.getDesignation() + " (code " + article.getCodeArticle() + "), restant : " + article.getStockActuel()));
         } else if (article.getStatut() == StatutStock.FAIBLE ||
-                article.getStockActuel().compareTo(article.getSeuilAlerteMin()) <= 0) {
+                (article.getSeuilAlerteMin() != null && article.getStockActuel().compareTo(article.getSeuilAlerteMin()) <= 0)) {
             alertes.add(buildAlerte(article, "SEUIL_ALERTE", "HAUTE",
                     "Stock sous seuil d'alerte",
                     "Stock faible pour " + article.getDesignation() + " (code " + article.getCodeArticle() + "), restant : " + article.getStockActuel()));
