@@ -67,9 +67,13 @@ public class MouvementStockService {
         mouvement.setNumeroFacture(request.getNumeroBon());
         mouvement.setNumeroLot(request.getNumeroLot());
         mouvement.setBandeId(request.getBandeId());
+        mouvement.setBandeNom(request.getBandeNom());
+        mouvement.setAnimalId(request.getAnimalId());
+        mouvement.setAnimalCode(request.getAnimalCode());
         mouvement.setOperateurNom(request.getOperateur());
         mouvement.setNotes(request.getNotes());
-        mouvement.setEntrepotDestinationNom(request.getDestinationOrigine());
+        String dest = request.getDestinationOrigine();
+        mouvement.setEntrepotDestinationNom(dest != null && dest.length() > 150 ? dest.substring(0, 150) : dest);
         mouvementRepository.save(mouvement);
 
         article.setStockActuel(stockApres);
@@ -209,24 +213,21 @@ public class MouvementStockService {
         r.setArticle(new MouvementResponse.ArticleResume(m.getArticle().getId(), m.getArticle().getDesignation(), m.getArticle().getCodeArticle()));
         r.setQuantite(m.getQuantite()); r.setUniteMesure(uniteFront(m.getArticle().getUniteMesure())); r.setDateMouvement(m.getDateMouvement()); r.setMotif(m.getMotif());
         r.setDestinationOrigine(m.getEntrepotDestinationNom()); r.setBandeId(m.getBandeId()); r.setFournisseurNom(m.getFournisseurNom());
+        r.setBandeNom(m.getBandeNom()); r.setAnimalId(m.getAnimalId()); r.setAnimalCode(m.getAnimalCode());
         if (r.getFournisseurNom() == null && m.getFournisseur() != null) r.setFournisseurNom(m.getFournisseur().getNom());
         r.setNumeroBon(m.getNumeroFacture()); r.setCoutUnitaire(m.getPrixUnitaire()); r.setCoutTotal(m.getMontantTotal()); r.setNumeroLot(m.getNumeroLot());
         r.setOperateur(m.getOperateurNom()); r.setNotes(m.getNotes()); r.setFermeId(m.getFermeId()); r.setDateCreation(m.getDateCreation());
         return r;
     }
 
+    /**
+     * Renvoie l'unité réelle de l'article pour le front.
+     * Ne plus de "TONNE -> kg" : le stock est decremente tel quel par
+     * calculerStockApres(), donc le front doit connaitre l'exacte unite
+     * pour convertir une quantite saisie dans une autre unite.
+     */
     private String uniteFront(com.reseau_partage.core.entities.enumtypes.UniteMesure unite) {
-        return switch (unite) {
-            case KG -> "kg";
-            case LITRE -> "L";
-            case UNITE -> "unite";
-            case DOSE -> "dose";
-            case COMPRIME -> "comprime";
-            case SACHET -> "sachet";
-            case BOITE -> "carton";
-            case SAC -> "palette";
-            case TONNE -> "kg";
-        };
+        return unite == null ? null : unite.name().toLowerCase();
     }
 
     public static class MouvementStatistiques {
