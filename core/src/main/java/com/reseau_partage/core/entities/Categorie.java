@@ -7,6 +7,13 @@ public enum Categorie {
     PORCELET,
     COCHONNET,
 
+    // ── Volailles (Poulet, Dinde, etc.) ───────────────────────────────────────
+    POUSSIN,
+    POULET_CHAIR,
+    PONDEUSE,
+    CHAIR,
+    MIXTE,
+
     // ── Commun élevage ────────────────────────────────────────────────────────
     ENGRAISSEMENT,
     REPRODUCTEUR,

@@ -20,6 +20,7 @@
         <module>organisation</module>
         <module>animaux</module>
         <module>stocks</module>
+        <module>vaccination</module>
         <module>gateway</module>
     </modules>
 

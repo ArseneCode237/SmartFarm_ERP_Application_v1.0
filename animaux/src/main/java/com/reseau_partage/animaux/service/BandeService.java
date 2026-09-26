@@ -78,7 +78,7 @@ public class BandeService {
         }
         
         // Initialiser les champs supplémentaires
-        bande.setCategorie(request.categorie());
+        bande.setCategorie(request.getEffectiveCategorie());
         bande.setDescription(request.description());
         bande.setProvenance(request.provenance());
         bande.setFournisseurNom(request.fournisseurNom());
