@@ -28,6 +28,10 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
 
 @Service
 public class VaccinationIndividuelleService {
@@ -107,11 +111,33 @@ public class VaccinationIndividuelleService {
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             PdfDocument pdf = new PdfDocument(new PdfWriter(output));
             try (Document document = new Document(pdf)) {
-                document.add(new Paragraph("Carnet vaccinal - animal " + animalId));
-                for (VaccinationIndividuelleResponse vaccination : vaccinations) {
-                    document.add(new Paragraph(vaccination.dateVaccination() + " - " + vaccination.vaccinNom()
-                            + " - dose " + vaccination.doseMl() + " ml"));
+                document.add(new Paragraph("Carnet vaccinal individuel").setFontSize(18).setBold());
+                document.add(new Paragraph("Animal #" + animalId).setFontSize(12).setBold());
+                if (!vaccinations.isEmpty()) {
+                    VaccinationIndividuelleResponse first = vaccinations.get(0);
+                    document.add(new Paragraph("Code: " + (first.animalCode() != null ? first.animalCode() : "—")
+                            + " | Espèce: " + (first.espece() != null ? first.espece().name() : "—"))
+                            .setFontSize(10));
                 }
+                document.add(new Paragraph(" "));
+                Table table = new Table(UnitValue.createPercentArray(new float[]{3, 3, 2, 2, 2, 3}));
+                table.setWidth(UnitValue.createPercentValue(100));
+                String[] headers = {"Date", "Vaccin", "Type", "Dose (mL)", "Voie", "Vétérinaire"};
+                for (String h : headers) {
+                    table.addHeaderCell(new Cell().add(new Paragraph(h).setBold().setFontSize(9)));
+                }
+                for (VaccinationIndividuelleResponse v : vaccinations) {
+                    table.addCell(new Cell().add(new Paragraph(v.dateVaccination() != null ? v.dateVaccination().toString() : "—").setFontSize(9)));
+                    table.addCell(new Cell().add(new Paragraph(v.vaccinNom() != null ? v.vaccinNom() : "—").setFontSize(9)));
+                    table.addCell(new Cell().add(new Paragraph(v.typeVaccination() != null ? v.typeVaccination().name() : "—").setFontSize(9)));
+                    table.addCell(new Cell().add(new Paragraph(v.doseMl() != null ? v.doseMl().toString() : "—").setFontSize(9)));
+                    table.addCell(new Cell().add(new Paragraph(v.voieAdministration() != null ? v.voieAdministration().name() : "—").setFontSize(9)));
+                    table.addCell(new Cell().add(new Paragraph(v.veterinaireNom() != null ? v.veterinaireNom() : "—").setFontSize(9)));
+                }
+                document.add(table);
+                document.add(new Paragraph(" "));
+                document.add(new Paragraph("Total vaccinations: " + vaccinations.size()).setFontSize(10).setBold());
+                document.add(new Paragraph("Document généré le " + LocalDate.now()).setFontSize(8).setItalic());
             }
             return output.toByteArray();
         } catch (IOException exception) {
