@@ -69,6 +69,11 @@ public class AuthController {
         return ResponseEntity.ok(authService.updateProfile(authentication.getName(), request));
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<ProfileResponse> getProfile(Authentication authentication) {
+        return ResponseEntity.ok(authService.getProfile(authentication.getName()));
+    }
+
     @GetMapping("/test")
     public ResponseEntity<ApiSuccess> test() {
         return ResponseEntity.ok(ApiSuccess.ok("Accès autorisé : votre jeton est valide."));
