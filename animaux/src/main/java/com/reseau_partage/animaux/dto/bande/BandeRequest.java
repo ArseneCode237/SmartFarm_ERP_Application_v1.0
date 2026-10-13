@@ -95,7 +95,7 @@ public record BandeRequest(
     }
 
     /**
-     * Vérifie si la requête concerne des volailles (poulet, dinde, canard, pintade, pigeon)
+     * Vérifie si la requête concerne des volailles (poulet, dinde, canard, pintade, pigeon, caille)
      */
     public boolean isVolaille() {
         return espece != null && (
@@ -103,6 +103,7 @@ public record BandeRequest(
             espece == Espece.DINDE ||
             espece == Espece.CANARD ||
             espece == Espece.PINTADE ||
+            espece == Espece.CAILLE ||
             espece == Espece.PIGEON
         );
     }
