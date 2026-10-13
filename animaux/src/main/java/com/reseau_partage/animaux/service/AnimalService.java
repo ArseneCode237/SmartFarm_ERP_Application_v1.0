@@ -342,13 +342,18 @@ public class AnimalService {
 
     private String genererCodeUnique(Espece espece) {
         String prefixe = switch (espece) {
-            case POULET, DINDE, CANARD, PINTADE, PIGEON -> "AV";
+            case POULET, DINDE, CANARD, PINTADE, PIGEON, CAILLE -> "AV";
+            case AUTRUCHE -> "AU";
             case BOVIN -> "BV";
             case OVIN -> "OV";
             case CAPRIN -> "CA";
             case PORC -> "PO";
             case LAPIN -> "LA";
             case TILAPIA, SILURE, CARPE, CREVETTE, CAPITAINE, POISSON -> "AQ";
+            case ESCARGOT -> "ES";
+            case EQUIN -> "EQ";
+            case CAMELIN -> "CM";
+            case AULACODE -> "AL";
             default -> "XX";
         };
         long sequence = animalRepository.count() + 1;
