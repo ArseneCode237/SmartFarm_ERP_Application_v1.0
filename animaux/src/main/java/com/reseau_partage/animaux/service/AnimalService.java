@@ -155,6 +155,7 @@ public class AnimalService {
         return new AnimalRequest(
                 null, // codeRfid : unique, doit être saisi à nouveau
                 null, // codeBoucle : unique, doit être saisi à nouveau
+                a.getNom(),
                 a.getEspece(),
                 a.getRace(),
                 a.getSouche(),
@@ -170,6 +171,7 @@ public class AnimalService {
                 a.getPere() != null ? a.getPere().getId() : null,
                 a.getProvenance(),
                 a.getFournisseurNom(),
+                a.getPrixUnitaire(),
                 a.getNumeroLotAchat(),
                 null, // dateDerniereDeclaration : remise à zéro
                 a.getNotes(),
@@ -181,11 +183,17 @@ public class AnimalService {
     public AnimalResponse update(Long id, AnimalRequest request) {
         validerImage(request.imageUrl());
         Animal animal = animalRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Animal", id));
+        animal.setNom(request.nom());
         animal.setRace(request.race());
         animal.setSouche(request.souche());
         animal.setNotes(request.notes());
         animal.setCodeRfid(request.codeRfid());
         animal.setCodeBoucle(request.codeBoucle());
+        animal.setDateNaissance(request.dateNaissance());
+        animal.setDateEntree(request.dateEntree());
+        animal.setPoidsEntreeKg(request.poidsEntreeKg());
+        animal.setFournisseurNom(request.fournisseurNom());
+        animal.setPrixUnitaire(request.prixUnitaire());
         if (request.imageUrl() != null) {
             animal.setImageUrl(request.imageUrl());
         }
