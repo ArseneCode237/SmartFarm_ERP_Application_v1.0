@@ -222,6 +222,14 @@ public class AuthService {
                 UtilisateurMapper.toPojo(utilisateur));
     }
 
+    @Transactional(readOnly = true)
+    public ProfileResponse getProfile(String currentEmail) {
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouve"));
+        return new ProfileResponse(true, 200, "Profil charge avec succes.", false,
+                UtilisateurMapper.toPojo(utilisateur));
+    }
+
     private String requiredText(String value, String fieldLabel) {
         if (value.isBlank()) {
             throw new IllegalArgumentException(fieldLabel + " est obligatoire.");

@@ -13,6 +13,7 @@ import java.time.LocalDate;
 public record AnimalRequest(
         String codeRfid,
         String codeBoucle,
+        String nom,
         @NotNull Espece espece,
         String race,
         String souche,
@@ -28,6 +29,7 @@ public record AnimalRequest(
         Long pereId,
         Provenance provenance,
         String fournisseurNom,
+        BigDecimal prixUnitaire,
         String numeroLotAchat,
         LocalDate dateDerniereDeclaration,
         String notes,

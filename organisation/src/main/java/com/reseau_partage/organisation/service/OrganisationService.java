@@ -463,6 +463,9 @@ public class OrganisationService {
   /**
    * Liste exhaustive des types d'activité acceptés sur une ferme.
    * Correspond aux "ids" utilisés côté front (elevationTypes).
+   * Inclut les animaux constituants (détail bovins / ovins, cf. front
+   * ELEVAGE_CONSTITUANTS) : ils sont stockés dans la même liste, à côté
+   * de leur catégorie, pour un enregistrement en base sans migration.
    */
   private static final Set<String> TYPES_ACTIVITE_AUTORISES = Set.of(
       // Catégories générales (historique)
@@ -470,7 +473,11 @@ public class OrganisationService {
       // Élevages par espèce (front elevationTypes)
       "bovins", "ovins", "caprins", "porcins", "volailles",
       "lapins", "equins", "camelins", "aulacodes", "escargots",
-      "canards", "cailles", "pintades", "autruches"
+      "canards", "cailles", "pintades", "autruches",
+      // Animaux constituants : éclaté de "bovins"
+      "vache", "taureau", "veau", "boeuf", "genisse",
+      // Animaux constituants : éclaté de "ovins"
+      "mouton", "brebis", "agneau", "belier"
   );
 
   /**
