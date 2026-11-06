@@ -2,6 +2,7 @@ package com.reseau_partage.animaux.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -65,7 +66,7 @@ public class BandeService {
         if (structure.getStatut() != StatutStructure.ACTIF) {
             throw new IllegalArgumentException("Impossible de créer une bande : la structure (ID=" + request.structureId() + ") n'est pas active. Statut actuel : " + structure.getStatut());
         }
-        if (structure instanceof Enclos e && e.getEspecesCompatibles() != null && !e.getEspecesCompatibles().contains(request.espece().name())) {
+        if (structure instanceof Enclos e && !enclosCompatibleEspece(e, request.espece())) {
             throw new IncompatibiliteEspeceException("Impossible de créer la bande : l'enclos (ID=" + request.structureId() + ") n'est pas compatible avec l'espèce " + request.espece() + ". Espèces compatibles : " + e.getEspecesCompatibles());
         }
         Bande bande = bandeMapper.toEntity(request);
@@ -239,7 +240,7 @@ public class BandeService {
             if (destination.getStatut() != StatutStructure.ACTIF) {
                 throw new IllegalArgumentException("Impossible de mettre à jour la bande : la structure de destination (ID=" + request.structureId() + ") n'est pas active. Statut actuel : " + destination.getStatut());
             }
-            if (destination instanceof Enclos e && e.getEspecesCompatibles() != null && !e.getEspecesCompatibles().contains(request.espece().name())) {
+            if (destination instanceof Enclos e && !enclosCompatibleEspece(e, request.espece())) {
                 throw new IncompatibiliteEspeceException("Impossible de mettre à jour la bande : l'enclos de destination (ID=" + request.structureId() + ") n'est pas compatible avec l'espèce " + request.espece() + ". Espèces compatibles : " + e.getEspecesCompatibles());
             }
             bande.setStructure(destination);
@@ -421,5 +422,38 @@ public class BandeService {
 
     private BandeResponse toResponse(Bande bande) {
         return bandeMapper.toResponse(bande);
+    }
+
+    /**
+     * Vérifie la compatibilité d'un enclos avec une espèce.
+     * Le champ especesCompatibles est saisi librement côté front (ex. "Bovin",
+     * "Bovins", "BOVIN; Ovin"), il est donc comparé sans tenir compte de la
+     * casse, des accents, du pluriel ni des séparateurs. Un champ vide ou nul
+     * signifie "aucune restriction".
+     */
+    private static boolean enclosCompatibleEspece(Enclos enclos, Espece espece) {
+        String compatibles = enclos.getEspecesCompatibles();
+        if (compatibles == null || compatibles.isBlank()) {
+            return true;
+        }
+        String cible = normaliserEspece(espece.name());
+        for (String valeur : compatibles.split("[,;/|]+")) {
+            if (normaliserEspece(valeur).equals(cible)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String normaliserEspece(String valeur) {
+        if (valeur == null) {
+            return "";
+        }
+        String sansAccent = Normalizer.normalize(valeur, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+        String texte = sansAccent.toLowerCase().replaceAll("[^a-z0-9]", "");
+        if (texte.length() > 1 && texte.endsWith("s")) {
+            texte = texte.substring(0, texte.length() - 1);
+        }
+        return texte;
     }
 }
