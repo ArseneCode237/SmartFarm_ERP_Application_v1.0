@@ -112,6 +112,10 @@ public class BovinService {
         animal.setEspece(Espece.BOVIN);
         animal.setNom(request.nom());
         animal.setRace(request.race().trim());
+        animal.setSouche(request.souche() == null ? null : request.souche().trim());
+        animal.setCastre(request.castre());
+        animal.setCouleurRobe(request.couleurRobe());
+        animal.setMarqueFer(request.marqueFer());
         animal.setSexe(request.sexe());
         animal.setCodeBoucle(request.codeBoucle());
         animal.setCodeRfid(request.codeRfid());
@@ -437,7 +441,8 @@ public class BovinService {
 
     private BovinResponse toResponse(Animal animal, ProfilBovin profil) {
         return new BovinResponse(animal.getId(), animal.getCodeUnique(), animal.getCodeBoucle(),
-                animal.getCodeRfid(), animal.getNom(), animal.getRace(), animal.getSexe(),
+                animal.getCodeRfid(), animal.getNom(), animal.getRace(), animal.getSouche(),
+                animal.getCastre(), animal.getCouleurRobe(), animal.getMarqueFer(), animal.getSexe(),
                 animal.getDateNaissance(), animal.getPoidsActuelKg(), animal.getStatut(),
                 animal.getStructure() == null ? null : animal.getStructure().getId(),
                 animal.getStructure() == null ? null : animal.getStructure().getNom(),

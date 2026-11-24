@@ -8,5 +8,9 @@ public enum CategorieBovine {
     BROUTARD,
     GENISSE,
     TAURILLON,
-    BOVIN_CHARCUTIER
+    BOVIN_CHARCUTIER,
+    /** Bœuf de labour ou de transport (traction animale). */
+    TRACTION_TRAVAIL,
+    /** Animal âgé ou improductif retiré de la reproduction, destiné à la vente. */
+    REFORME
 }

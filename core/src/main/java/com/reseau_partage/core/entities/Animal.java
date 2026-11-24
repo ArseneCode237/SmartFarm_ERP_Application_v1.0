@@ -51,6 +51,18 @@ public class Animal {
     @Column(length = 50)
     private String souche;
 
+    /** Animal castré (identification terrain, utile au calcul du stade physiologique). */
+    @Column(name = "castre")
+    private Boolean castre;
+
+    /** Couleur de la robe (identification visuelle sans boucle). */
+    @Column(name = "couleur_robe", length = 50)
+    private String couleurRobe;
+
+    /** Marque au fer (identification traditionnelle). */
+    @Column(name = "marque_fer", length = 50)
+    private String marqueFer;
+
     @Enumerated(EnumType.STRING)
     private Sexe sexe;
 
@@ -165,6 +177,12 @@ public class Animal {
     public void setRace(String race) { this.race = race; }
     public String getSouche() { return souche; }
     public void setSouche(String souche) { this.souche = souche; }
+    public Boolean getCastre() { return castre; }
+    public void setCastre(Boolean castre) { this.castre = castre; }
+    public String getCouleurRobe() { return couleurRobe; }
+    public void setCouleurRobe(String couleurRobe) { this.couleurRobe = couleurRobe; }
+    public String getMarqueFer() { return marqueFer; }
+    public void setMarqueFer(String marqueFer) { this.marqueFer = marqueFer; }
     public Sexe getSexe() { return sexe; }
     public void setSexe(Sexe sexe) { this.sexe = sexe; }
     public LocalDate getDateNaissance() { return dateNaissance; }

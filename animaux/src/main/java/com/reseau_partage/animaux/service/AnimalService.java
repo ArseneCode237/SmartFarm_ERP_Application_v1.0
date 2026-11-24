@@ -159,6 +159,9 @@ public class AnimalService {
                 a.getEspece(),
                 a.getRace(),
                 a.getSouche(),
+                a.getCastre(),
+                a.getCouleurRobe(),
+                a.getMarqueFer(),
                 a.getSexe(),
                 null, // dateNaissance : individuelle, remise à null
                 null, // dateEntree : remise à null (date du jour à la création)
@@ -186,6 +189,9 @@ public class AnimalService {
         animal.setNom(request.nom());
         animal.setRace(request.race());
         animal.setSouche(request.souche());
+        animal.setCastre(request.castre());
+        animal.setCouleurRobe(request.couleurRobe());
+        animal.setMarqueFer(request.marqueFer());
         animal.setNotes(request.notes());
         animal.setCodeRfid(request.codeRfid());
         animal.setCodeBoucle(request.codeBoucle());
