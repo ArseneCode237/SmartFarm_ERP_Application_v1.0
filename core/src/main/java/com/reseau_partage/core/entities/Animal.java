@@ -55,6 +55,10 @@ public class Animal {
     @Column(name = "castre")
     private Boolean castre;
 
+    /** Femelle ayant déjà vêlé (identification terrain, utile au stade physiologique). */
+    @Column(name = "deja_veule")
+    private Boolean dejaVeule;
+
     /** Couleur de la robe (identification visuelle sans boucle). */
     @Column(name = "couleur_robe", length = 50)
     private String couleurRobe;
@@ -62,6 +66,15 @@ public class Animal {
     /** Marque au fer (identification traditionnelle). */
     @Column(name = "marque_fer", length = 50)
     private String marqueFer;
+
+    /** Dentition observée (estimation de l'âge sans date de naissance). */
+    @Column(name = "dentition", length = 50)
+    private String dentition;
+
+    /** Type de production (finalité économique : viande, lait, mixte, traction…). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_production")
+    private TypeProduction typeProduction;
 
     @Enumerated(EnumType.STRING)
     private Sexe sexe;
@@ -179,10 +192,16 @@ public class Animal {
     public void setSouche(String souche) { this.souche = souche; }
     public Boolean getCastre() { return castre; }
     public void setCastre(Boolean castre) { this.castre = castre; }
+    public Boolean getDejaVeule() { return dejaVeule; }
+    public void setDejaVeule(Boolean dejaVeule) { this.dejaVeule = dejaVeule; }
     public String getCouleurRobe() { return couleurRobe; }
     public void setCouleurRobe(String couleurRobe) { this.couleurRobe = couleurRobe; }
     public String getMarqueFer() { return marqueFer; }
     public void setMarqueFer(String marqueFer) { this.marqueFer = marqueFer; }
+    public String getDentition() { return dentition; }
+    public void setDentition(String dentition) { this.dentition = dentition; }
+    public TypeProduction getTypeProduction() { return typeProduction; }
+    public void setTypeProduction(TypeProduction typeProduction) { this.typeProduction = typeProduction; }
     public Sexe getSexe() { return sexe; }
     public void setSexe(Sexe sexe) { this.sexe = sexe; }
     public LocalDate getDateNaissance() { return dateNaissance; }

@@ -160,8 +160,11 @@ public class AnimalService {
                 a.getRace(),
                 a.getSouche(),
                 a.getCastre(),
+                a.getDejaVeule(),
                 a.getCouleurRobe(),
                 a.getMarqueFer(),
+                a.getDentition(),
+                a.getTypeProduction(),
                 a.getSexe(),
                 null, // dateNaissance : individuelle, remise à null
                 null, // dateEntree : remise à null (date du jour à la création)
@@ -190,8 +193,11 @@ public class AnimalService {
         animal.setRace(request.race());
         animal.setSouche(request.souche());
         animal.setCastre(request.castre());
+        animal.setDejaVeule(request.dejaVeule());
         animal.setCouleurRobe(request.couleurRobe());
         animal.setMarqueFer(request.marqueFer());
+        animal.setDentition(request.dentition());
+        animal.setTypeProduction(request.typeProduction());
         animal.setNotes(request.notes());
         animal.setCodeRfid(request.codeRfid());
         animal.setCodeBoucle(request.codeBoucle());

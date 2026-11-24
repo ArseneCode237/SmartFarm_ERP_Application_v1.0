@@ -5,6 +5,7 @@ import com.reseau_partage.core.entities.ModeSuivi;
 import com.reseau_partage.core.entities.Provenance;
 import com.reseau_partage.core.entities.Sexe;
 import com.reseau_partage.core.entities.StatutAnimal;
+import com.reseau_partage.core.entities.TypeProduction;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -20,8 +21,11 @@ public record AnimalResponse(
         String race,
         String souche,
         Boolean castre,
+        Boolean dejaVeule,
         String couleurRobe,
         String marqueFer,
+        String dentition,
+        TypeProduction typeProduction,
         Sexe sexe,
         LocalDate dateNaissance,
         LocalDate dateEntree,

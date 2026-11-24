@@ -4,6 +4,7 @@ import com.reseau_partage.core.entities.Espece;
 import com.reseau_partage.core.entities.ModeSuivi;
 import com.reseau_partage.core.entities.Provenance;
 import com.reseau_partage.core.entities.Sexe;
+import com.reseau_partage.core.entities.TypeProduction;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 
@@ -18,8 +19,11 @@ public record AnimalRequest(
         String race,
         String souche,
         Boolean castre,
+        Boolean dejaVeule,
         String couleurRobe,
         String marqueFer,
+        String dentition,
+        TypeProduction typeProduction,
         Sexe sexe,
         LocalDate dateNaissance,
         @NotNull LocalDate dateEntree,

@@ -32,6 +32,7 @@ import com.reseau_partage.core.entities.StatutAnimal;
 import com.reseau_partage.core.entities.StatutReproductifBovin;
 import com.reseau_partage.core.entities.StatutStructure;
 import com.reseau_partage.core.entities.Structure;
+import com.reseau_partage.core.entities.TypeProduction;
 import com.reseau_partage.core.repository.AnimalRepository;
 import com.reseau_partage.core.repository.ControleLaitierRepository;
 import com.reseau_partage.core.repository.ProfilBovinRepository;
@@ -96,6 +97,7 @@ public class BovinService {
     @Transactional
     public BovinResponse create(BovinRequest request) {
         validateCategorySex(request.categorieBovine(), request.sexe());
+        validateTypeProductionSex(request.typeProduction(), request.sexe());
         if (request.dateNaissance() != null && request.dateNaissance().isAfter(request.dateEntree())) {
             throw new IllegalArgumentException("La date de naissance ne peut pas être postérieure à l'entrée.");
         }
@@ -114,8 +116,11 @@ public class BovinService {
         animal.setRace(request.race().trim());
         animal.setSouche(request.souche() == null ? null : request.souche().trim());
         animal.setCastre(request.castre());
+        animal.setDejaVeule(request.dejaVeule());
         animal.setCouleurRobe(request.couleurRobe());
         animal.setMarqueFer(request.marqueFer());
+        animal.setDentition(request.dentition());
+        animal.setTypeProduction(request.typeProduction());
         animal.setSexe(request.sexe());
         animal.setCodeBoucle(request.codeBoucle());
         animal.setCodeRfid(request.codeRfid());
@@ -423,6 +428,13 @@ public class BovinService {
         }
     }
 
+    /** Un animal mâle ne peut pas avoir une finalité exclusivement laitière. */
+    private void validateTypeProductionSex(TypeProduction typeProduction, Sexe sexe) {
+        if (typeProduction == TypeProduction.LAIT && sexe == Sexe.MALE) {
+            throw new IllegalArgumentException("Un animal mâle ne peut pas avoir le type de production « Lait ».");
+        }
+    }
+
     private Long fermeId(Animal animal) {
         if (animal.getStructure() == null || animal.getStructure().getSite() == null
                 || animal.getStructure().getSite().getFerme() == null) {
@@ -442,7 +454,8 @@ public class BovinService {
     private BovinResponse toResponse(Animal animal, ProfilBovin profil) {
         return new BovinResponse(animal.getId(), animal.getCodeUnique(), animal.getCodeBoucle(),
                 animal.getCodeRfid(), animal.getNom(), animal.getRace(), animal.getSouche(),
-                animal.getCastre(), animal.getCouleurRobe(), animal.getMarqueFer(), animal.getSexe(),
+                animal.getCastre(), animal.getDejaVeule(), animal.getCouleurRobe(), animal.getMarqueFer(),
+                animal.getDentition(), animal.getTypeProduction(), animal.getSexe(),
                 animal.getDateNaissance(), animal.getPoidsActuelKg(), animal.getStatut(),
                 animal.getStructure() == null ? null : animal.getStructure().getId(),
                 animal.getStructure() == null ? null : animal.getStructure().getNom(),

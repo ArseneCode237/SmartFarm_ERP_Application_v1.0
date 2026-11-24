@@ -17,7 +17,8 @@ CHECK (type_production IN (
     'VIANDE',
     'AQUACULTURE',
     'MIXTE',
-    'NAISSANCE'
+    'NAISSANCE',
+    'TRACTION'
 ));
 
 -- Mettre à jour aussi la contrainte pour l'enum Provenance si nécessaire
@@ -35,10 +36,33 @@ CHECK (provenance IN (
 ALTER TABLE bandes DROP CONSTRAINT IF EXISTS bandes_categorie_check;
 ALTER TABLE bandes ADD CONSTRAINT bandes_categorie_check 
 CHECK (categorie IN (
+    -- Porcins
     'TRUIE',
     'VERRAT',
     'PORCELET',
     'COCHONNET',
+    -- Volailles
+    'POUSSIN',
+    'POULET_CHAIR',
+    'PONDEUSE',
+    'CHAIR',
+    'MIXTE',
+    -- Commun élevage
     'ENGRAISSEMENT',
-    'REPRODUCTEUR'
+    'REPRODUCTEUR',
+    -- Bovins
+    'VACHE_LAITIERE',
+    'VACHE_ALLAITANTE',
+    'TAUREAU_REPRODUCTEUR',
+    'VEAU',
+    'BROUTARD',
+    'GENISSE',
+    'TAURILLON',
+    'BOVIN_CHARCUTIER',
+    'TRACTION_TRAVAIL',
+    'REFORME',
+    -- Aquaculture / Poissons
+    'ALEVIN',
+    'JUVENILE',
+    'ADULTE'
 ));

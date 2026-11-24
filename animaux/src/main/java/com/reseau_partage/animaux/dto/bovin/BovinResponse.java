@@ -8,6 +8,7 @@ import com.reseau_partage.core.entities.CategorieBovine;
 import com.reseau_partage.core.entities.Sexe;
 import com.reseau_partage.core.entities.StatutAnimal;
 import com.reseau_partage.core.entities.StatutReproductifBovin;
+import com.reseau_partage.core.entities.TypeProduction;
 
 public record BovinResponse(
         Long id,
@@ -18,8 +19,11 @@ public record BovinResponse(
         String race,
         String souche,
         Boolean castre,
+        Boolean dejaVeule,
         String couleurRobe,
         String marqueFer,
+        String dentition,
+        TypeProduction typeProduction,
         Sexe sexe,
         LocalDate dateNaissance,
         BigDecimal poidsActuelKg,
