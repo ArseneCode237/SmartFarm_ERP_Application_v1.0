@@ -14,12 +14,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.reseau_partage.animaux.dto.bovin.BandeBovinRequest;
+import com.reseau_partage.animaux.dto.bovin.BandeBovinResponse;
 import com.reseau_partage.animaux.dto.bovin.BovinCategorieRequest;
 import com.reseau_partage.animaux.dto.bovin.BovinRequest;
 import com.reseau_partage.animaux.dto.bovin.BovinResponse;
 import com.reseau_partage.animaux.dto.bovin.BovinStatutRequest;
 import com.reseau_partage.animaux.dto.bovin.GenealogieBovinResponse;
+import com.reseau_partage.animaux.dto.pesee.PeseeRequest;
+import com.reseau_partage.animaux.dto.pesee.PeseeResponse;
+import com.reseau_partage.animaux.service.BandeBovinService;
 import com.reseau_partage.animaux.service.BovinService;
+import com.reseau_partage.animaux.service.PeseeService;
 import com.reseau_partage.animaux.service.SaillieBovinService;
 import com.reseau_partage.core.entities.CategorieBovine;
 import com.reseau_partage.core.entities.StatutReproductifBovin;
@@ -32,10 +38,15 @@ public class BovinController {
 
     private final BovinService service;
     private final SaillieBovinService saillieService;
+    private final BandeBovinService bandeBovinService;
+    private final PeseeService peseeService;
 
-    public BovinController(BovinService service, SaillieBovinService saillieService) {
+    public BovinController(BovinService service, SaillieBovinService saillieService,
+            BandeBovinService bandeBovinService, PeseeService peseeService) {
         this.service = service;
         this.saillieService = saillieService;
+        this.bandeBovinService = bandeBovinService;
+        this.peseeService = peseeService;
     }
 
     @PostMapping
@@ -43,6 +54,33 @@ public class BovinController {
         BovinResponse bovin = service.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("data", bovin, "message", "Bovin créé avec succès."));
+    }
+
+    /** Création d'une bande bovine (troupeau) + son profil bovin. */
+    @PostMapping("/bande")
+    public ResponseEntity<Map<String, Object>> creerBandeBovine(@Valid @RequestBody BandeBovinRequest request) {
+        BandeBovinResponse data = bandeBovinService.creerBandeBovine(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(Map.of("data", data, "message", "Bande bovine créée avec succès."));
+    }
+
+    /**
+     * Profil bovin selon le mode : {@code INDIVIDUEL} (ProfilBovin) ou {@code BANDE} (ProfilBandeBovin).
+     */
+    @GetMapping("/{id}/profil")
+    public ResponseEntity<Map<String, Object>> profil(@PathVariable Long id) {
+        return ResponseEntity.ok(service.profil(id));
+    }
+
+    /** Pesée collective (mensuelle) d'une bande bovine — déléguée au service de pesée générique. */
+    @PostMapping("/{bandeId}/collecte-pesee")
+    public ResponseEntity<Map<String, Object>> collectePesee(
+            @PathVariable Long bandeId, @RequestBody PeseeRequest request) {
+        bandeBovinService.verifierBandeBovine(bandeId);
+        List<PeseeResponse> resultats = peseeService.peseeCollectiveBande(bandeId, request);
+        return ResponseEntity.ok(Map.of("content", resultats, "totalElements", resultats.size(),
+                "message", "Pesée collective effectuée sur la bande bovine id=" + bandeId + ". "
+                        + resultats.size() + " animaux pesés."));
     }
 
     @GetMapping
@@ -110,5 +148,14 @@ public class BovinController {
     public ResponseEntity<Map<String, Object>> echoesEnRetard() {
         var result = saillieService.echoesEnRetard();
         return ResponseEntity.ok(Map.of("content", result, "totalElements", result.size()));
+    }
+
+    /** Alertes bovines agrégées : vêlages, tarissements, échos en retard, chutes de lait. */
+    @GetMapping("/alertes")
+    public ResponseEntity<Map<String, Object>> alertes(
+            @RequestParam(required = false) Long fermeId,
+            @RequestParam(defaultValue = "14") int joursVelage,
+            @RequestParam(defaultValue = "3") int joursTarissement) {
+        return ResponseEntity.ok(service.alertes(fermeId, joursVelage, joursTarissement));
     }
 }

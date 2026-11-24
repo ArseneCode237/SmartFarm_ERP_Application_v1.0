@@ -1,9 +1,12 @@
 package com.reseau_partage.animaux.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -11,10 +14,13 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.reseau_partage.animaux.dto.bovin.BandeBovinResponse;
 import com.reseau_partage.animaux.dto.bovin.BovinRequest;
 import com.reseau_partage.animaux.dto.bovin.BovinResponse;
 import com.reseau_partage.animaux.dto.bovin.AnimalBovinLieResponse;
+import com.reseau_partage.animaux.dto.bovin.ControleLaitierResponse;
 import com.reseau_partage.animaux.dto.bovin.GenealogieBovinResponse;
+import com.reseau_partage.animaux.dto.bovin.SaillieBovinResponse;
 import com.reseau_partage.animaux.exception.ResourceNotFoundException;
 import com.reseau_partage.core.entities.Animal;
 import com.reseau_partage.core.entities.CategorieBovine;
@@ -67,16 +73,24 @@ public class BovinService {
     private final SaillieBovinRepository saillieRepository;
     private final VelageBovinRepository velageRepository;
     private final ControleLaitierRepository controleRepository;
+    private final BandeBovinService bandeBovinService;
+    private final SaillieBovinService saillieService;
+    private final ControleLaitierService controleLaitierService;
 
     public BovinService(AnimalRepository animalRepository, StructureRepository structureRepository,
             ProfilBovinRepository profilRepository, SaillieBovinRepository saillieRepository,
-            VelageBovinRepository velageRepository, ControleLaitierRepository controleRepository) {
+            VelageBovinRepository velageRepository, ControleLaitierRepository controleRepository,
+            BandeBovinService bandeBovinService, SaillieBovinService saillieService,
+            ControleLaitierService controleLaitierService) {
         this.animalRepository = animalRepository;
         this.structureRepository = structureRepository;
         this.profilRepository = profilRepository;
         this.saillieRepository = saillieRepository;
         this.velageRepository = velageRepository;
         this.controleRepository = controleRepository;
+        this.bandeBovinService = bandeBovinService;
+        this.saillieService = saillieService;
+        this.controleLaitierService = controleLaitierService;
     }
 
     @Transactional
@@ -143,6 +157,24 @@ public class BovinService {
     public BovinResponse get(Long animalId) {
         Animal animal = findAnimal(animalId);
         return toResponse(animal, findProfil(animalId));
+    }
+
+    /**
+     * Profil bovin selon le mode de suivi : {@code INDIVIDUEL} (animal + profil bovin)
+     * ou {@code BANDE} (bande bovine + profil bande bovin).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> profil(Long id) {
+        Animal animal = animalRepository.findById(id).orElse(null);
+        if (animal != null && animal.getEspece() == Espece.BOVIN) {
+            ProfilBovin profil = profilRepository.findByAnimalId(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Profil bovin", id));
+            return Map.of("mode", "INDIVIDUEL", "data", toResponse(animal, profil));
+        }
+        if (bandeBovinService.existeProfilBande(id)) {
+            return Map.of("mode", "BANDE", "data", bandeBovinService.getProfil(id));
+        }
+        throw new ResourceNotFoundException("Bovin ou bande bovine", id);
     }
 
     @Transactional
@@ -238,10 +270,89 @@ public class BovinService {
                 .collect(Collectors.groupingBy(BovinResponse::categorieBovine, Collectors.counting()));
         Map<StatutReproductifBovin, Long> parStatut = bovins.stream()
                 .map(BovinResponse::statutReproductif)
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .collect(Collectors.groupingBy(statut -> statut, Collectors.counting()));
-        return Map.of("fermeId", fermeId, "bovinsActifs", bovins.size(),
-                "parCategorie", parCategorie, "parStatutReproductif", parStatut);
+
+        BigDecimal productionLaitCumulKg = bovins.stream()
+                .map(BovinResponse::productionLaitCumulKg)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        List<BandeBovinResponse> bandes = bandeBovinService.parFerme(fermeId);
+        int effectifBandes = bandes.stream()
+                .mapToInt(b -> b.bande().effectifActuel() == null ? 0 : b.bande().effectifActuel()).sum();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("fermeId", fermeId);
+        result.put("bovinsActifs", bovins.size());
+        result.put("parCategorie", parCategorie);
+        result.put("parStatutReproductif", parStatut);
+        result.put("productionLaitCumulKg", productionLaitCumulKg);
+        result.put("bandesBovines", bandes.size());
+        result.put("effectifBandes", effectifBandes);
+        result.put("poidsMoyenBandesKg", moyenne(bandes.stream()
+                .map(b -> b.bande().poidsMoyenActuelKg()).filter(Objects::nonNull).toList()));
+        result.put("gmqMoyenBandesG", moyenne(bandes.stream()
+                .map(b -> b.bande().gainMoyenQuotidienG()).filter(Objects::nonNull).toList()));
+        result.put("fcrMoyenBandes", moyenne(bandes.stream()
+                .map(b -> b.bande().fcrCumule()).filter(Objects::nonNull).toList()));
+        return result;
+    }
+
+    /**
+     * Alertes bovines agrégées : vêlages proches, tarissements à effectuer,
+     * échographies de confirmation en retard et chutes de production laitière.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> alertes(Long fermeId, int joursVelage, int joursTarissement) {
+        validerHorizonAlerte(joursVelage);
+        validerHorizonAlerte(joursTarissement);
+        LocalDate today = LocalDate.now();
+
+        List<BovinResponse> velages = profilRepository
+                .findVelagesProches(today, today.plusDays(joursVelage),
+                        List.of(StatutReproductifBovin.GESTATION, StatutReproductifBovin.PRE_VELAGE))
+                .stream()
+                .filter(p -> fermeId == null || fermeId.equals(fermeId(p.getAnimal())))
+                .map(p -> toResponse(p.getAnimal(), p))
+                .toList();
+
+        List<BovinResponse> tarissements = profilRepository
+                .findTarissementsProches(today, today.plusDays(joursTarissement),
+                        StatutReproductifBovin.LACTATION)
+                .stream()
+                .filter(p -> fermeId == null || fermeId.equals(fermeId(p.getAnimal())))
+                .map(p -> toResponse(p.getAnimal(), p))
+                .toList();
+
+        List<SaillieBovinResponse> echos = saillieService.echoesEnRetard().stream()
+                .filter(s -> fermeId == null || fermeId.equals(fermeIdParAnimal(s.vacheId())))
+                .toList();
+
+        List<ControleLaitierResponse> chutes = fermeId == null
+                ? List.of()
+                : controleLaitierService.sousPerformeuses(fermeId);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("fermeId", fermeId);
+        result.put("velagesProches", velages);
+        result.put("tarissements", tarissements);
+        result.put("echosEnRetard", echos);
+        result.put("chutesLait", chutes);
+        result.put("totalAlertes", velages.size() + tarissements.size() + echos.size() + chutes.size());
+        return result;
+    }
+
+    private BigDecimal moyenne(List<BigDecimal> valeurs) {
+        if (valeurs.isEmpty()) {
+            return null;
+        }
+        BigDecimal somme = valeurs.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        return somme.divide(BigDecimal.valueOf(valeurs.size()), 2, RoundingMode.HALF_UP);
+    }
+
+    private Long fermeIdParAnimal(Long animalId) {
+        return animalRepository.findById(animalId).map(this::fermeId).orElse(null);
     }
 
     private void validerHorizonAlerte(int jours) {
