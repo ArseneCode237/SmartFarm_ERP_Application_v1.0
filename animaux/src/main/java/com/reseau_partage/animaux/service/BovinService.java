@@ -21,6 +21,7 @@ import com.reseau_partage.animaux.dto.bovin.AnimalBovinLieResponse;
 import com.reseau_partage.animaux.dto.bovin.ControleLaitierResponse;
 import com.reseau_partage.animaux.dto.bovin.GenealogieBovinResponse;
 import com.reseau_partage.animaux.dto.bovin.SaillieBovinResponse;
+import com.reseau_partage.animaux.exception.CapaciteStructureDepasseeException;
 import com.reseau_partage.animaux.exception.ResourceNotFoundException;
 import com.reseau_partage.core.entities.Animal;
 import com.reseau_partage.core.entities.CategorieBovine;
@@ -34,11 +35,13 @@ import com.reseau_partage.core.entities.StatutStructure;
 import com.reseau_partage.core.entities.Structure;
 import com.reseau_partage.core.entities.TypeProduction;
 import com.reseau_partage.core.repository.AnimalRepository;
+import com.reseau_partage.core.repository.BandeRepository;
 import com.reseau_partage.core.repository.ControleLaitierRepository;
 import com.reseau_partage.core.repository.ProfilBovinRepository;
 import com.reseau_partage.core.repository.SaillieBovinRepository;
 import com.reseau_partage.core.repository.StructureRepository;
 import com.reseau_partage.core.repository.VelageBovinRepository;
+import com.reseau_partage.core.util.CapaciteStructure;
 
 @Service
 public class BovinService {
@@ -70,6 +73,7 @@ public class BovinService {
 
     private final AnimalRepository animalRepository;
     private final StructureRepository structureRepository;
+    private final BandeRepository bandeRepository;
     private final ProfilBovinRepository profilRepository;
     private final SaillieBovinRepository saillieRepository;
     private final VelageBovinRepository velageRepository;
@@ -79,12 +83,14 @@ public class BovinService {
     private final ControleLaitierService controleLaitierService;
 
     public BovinService(AnimalRepository animalRepository, StructureRepository structureRepository,
+            BandeRepository bandeRepository,
             ProfilBovinRepository profilRepository, SaillieBovinRepository saillieRepository,
             VelageBovinRepository velageRepository, ControleLaitierRepository controleRepository,
             BandeBovinService bandeBovinService, SaillieBovinService saillieService,
             ControleLaitierService controleLaitierService) {
         this.animalRepository = animalRepository;
         this.structureRepository = structureRepository;
+        this.bandeRepository = bandeRepository;
         this.profilRepository = profilRepository;
         this.saillieRepository = saillieRepository;
         this.velageRepository = velageRepository;
@@ -92,6 +98,24 @@ public class BovinService {
         this.bandeBovinService = bandeBovinService;
         this.saillieService = saillieService;
         this.controleLaitierService = controleLaitierService;
+    }
+
+    /**
+     * Vérifie que l'ajout d'un animal ne fait pas dépasser la capacité maximale de la
+     * structure d'accueil. L'occupation réelle tient compte des animaux individuels
+     * déjà présents et des effectifs des bandes en cours hébergées par la structure.
+     */
+    private void verifierCapaciteStructure(Structure structure) {
+        Integer capaciteMax = CapaciteStructure.capaciteMaxAnimaux(structure);
+        if (capaciteMax == null) {
+            return; // Type de structure sans capacité exprimée en nombre d'animaux.
+        }
+        Long effectifBandes = bandeRepository.sumEffectifActuelEnCoursByStructureId(structure.getId());
+        long occupationActuelle = animalRepository.countByStructureId(structure.getId())
+                + (effectifBandes != null ? effectifBandes : 0L);
+        if (occupationActuelle + 1 > capaciteMax) {
+            throw new CapaciteStructureDepasseeException(structure.getNom(), capaciteMax, occupationActuelle, 1);
+        }
     }
 
     @Transactional
@@ -109,6 +133,7 @@ public class BovinService {
         if (structure.getStatut() != StatutStructure.ACTIF) {
             throw new IllegalArgumentException("La structure doit être active.");
         }
+        verifierCapaciteStructure(structure);
 
         Animal animal = new Animal();
         animal.setEspece(Espece.BOVIN);

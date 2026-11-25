@@ -32,6 +32,7 @@ import com.reseau_partage.core.repository.FermeRepository;
 import com.reseau_partage.core.repository.SiteRepository;
 import com.reseau_partage.core.repository.StructureRepository;
 import com.reseau_partage.core.repository.UtilisateurRepository;
+import com.reseau_partage.core.util.CapaciteStructure;
 import com.reseau_partage.organisation.dto.FermeRequest;
 import com.reseau_partage.organisation.dto.SiteRequest;
 import com.reseau_partage.organisation.dto.StructureRequest;
@@ -47,15 +48,18 @@ public class OrganisationService {
   private final StructureRepository structures;
   private final UtilisateurRepository utilisateurs;
   private final AnimalRepository animalRepository;
+  private final com.reseau_partage.core.repository.BandeRepository bandeRepository;
 
   public OrganisationService(FermeRepository fermes, SiteRepository sites,
       StructureRepository structures, UtilisateurRepository utilisateurs,
-      AnimalRepository animalRepository) {
+      AnimalRepository animalRepository,
+      com.reseau_partage.core.repository.BandeRepository bandeRepository) {
     this.fermes = fermes;
     this.sites = sites;
     this.structures = structures;
     this.utilisateurs = utilisateurs;
     this.animalRepository = animalRepository;
+    this.bandeRepository = bandeRepository;
   }
 
   public Map<String, Object> createFerme(FermeRequest r, String email) {
@@ -411,12 +415,8 @@ public class OrganisationService {
   @Transactional(readOnly = true)
   public Map<String, Object> occupancy(Long id) {
     Structure s = getStructureEntity(id);
-    Integer capacity = s instanceof Batiment b ? b.getCapaciteMaxAnimaux()
-        : s instanceof Enclos e ? e.getCapaciteMaxAnimaux()
-            : s instanceof Poulailler p ? p.getCapaciteMaxAnimaux()
-                : s instanceof Porcherie pc ? pc.getCapaciteMaxAnimaux()
-                    : null;
-    long animauxPresents = animalRepository.countByStructureId(id);
+    Integer capacity = CapaciteStructure.capaciteMaxAnimaux(s);
+    long animauxPresents = occupationStructure(id);
     Map<String, Object> out = new LinkedHashMap<>();
     out.put("structureId", id);
     out.put("typeStructure", type(s));
@@ -432,6 +432,16 @@ public class OrganisationService {
   public List<Map<String, Object>> listAnimalsForStructure(Long id) {
     getStructureEntity(id);
     return animalRepository.findByStructureId(id).stream().map(this::animalSummary).toList();
+  }
+
+  /**
+   * Occupation réelle d'une structure : animaux individuels présents + effectifs
+   * des bandes encore en cours qui y sont hébergées.
+   */
+  private long occupationStructure(Long structureId) {
+    long animauxIndividuels = animalRepository.countByStructureId(structureId);
+    Long effectifBandes = bandeRepository.sumEffectifActuelEnCoursByStructureId(structureId);
+    return animauxIndividuels + (effectifBandes != null ? effectifBandes : 0L);
   }
 
   private Ferme getFermeEntity(Long id) {
@@ -686,7 +696,7 @@ public class OrganisationService {
     m.put("statut", s.getStatut());
     m.put("dateCreation", s.getDateCreation());
     m.put("dateDebutVide", s.getDateDebutVide());
-    m.put("nombreAnimaux", animalRepository.countByStructureId(s.getId()));
+    m.put("nombreAnimaux", occupationStructure(s.getId()));
     m.put("animaux", animalRepository.findByStructureId(s.getId()).stream().map(this::animalSummary).toList());
     // ── Attributs spécifiques selon le type ──────────────────────────────────
     if (s instanceof Batiment x) {

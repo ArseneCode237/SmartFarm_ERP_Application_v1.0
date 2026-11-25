@@ -23,6 +23,10 @@ public interface BandeRepository extends JpaRepository<Bande, Long> {
     List<Bande> findByStatut(StatutBande statut);
     List<Bande> findByEspeceAndStatut(Espece espece, StatutBande statut);
 
+    /** Somme des effectifs actuels des bandes encore en cours hébergées par une structure. */
+    @Query("SELECT SUM(b.effectifActuel) FROM Bande b WHERE b.structure.id = :structureId AND b.statut = 'EN_COURS'")
+    Long sumEffectifActuelEnCoursByStructureId(@Param("structureId") Long structureId);
+
     @Query("SELECT b FROM Bande b WHERE b.structure.site.ferme.id = :fermeId")
     List<Bande> findByStructureSiteFermeId(@Param("fermeId") Long fermeId);
 

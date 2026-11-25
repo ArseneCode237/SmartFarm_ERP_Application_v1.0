@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.reseau_partage.animaux.dto.bande.BandeRequest;
 import com.reseau_partage.animaux.dto.bande.BandeResponse;
+import com.reseau_partage.animaux.exception.CapaciteStructureDepasseeException;
 import com.reseau_partage.animaux.exception.IncompatibiliteEspeceException;
 import com.reseau_partage.animaux.exception.QuantiteInvalideException;
 import com.reseau_partage.animaux.exception.ResourceNotFoundException;
@@ -36,6 +37,7 @@ import com.reseau_partage.core.repository.FermeRepository;
 import com.reseau_partage.core.repository.MouvementAnimalRepository;
 import com.reseau_partage.core.repository.SiteRepository;
 import com.reseau_partage.core.repository.StructureRepository;
+import com.reseau_partage.core.util.CapaciteStructure;
 
 @Service
 public class BandeService {
@@ -69,6 +71,7 @@ public class BandeService {
         if (structure instanceof Enclos e && !enclosCompatibleEspece(e, request.espece())) {
             throw new IncompatibiliteEspeceException("Impossible de créer la bande : l'enclos (ID=" + request.structureId() + ") n'est pas compatible avec l'espèce " + request.espece() + ". Espèces compatibles : " + e.getEspecesCompatibles());
         }
+        verifierCapaciteStructure(structure, request.effectifInitial() != null ? request.effectifInitial() : 0);
         Bande bande = bandeMapper.toEntity(request);
         bande.setStructure(structure);
         
@@ -376,6 +379,29 @@ public class BandeService {
             throw new IllegalArgumentException(
                 "Format d'image invalide. Formats acceptés : JPEG, PNG, GIF, WEBP.");
         }
+    }
+
+    /**
+     * Vérifie que l'ajout d'animaux ne fait pas dépasser la capacité maximale de la
+     * structure d'accueil. L'occupation réelle tient compte des animaux individuels
+     * déjà présents et des effectifs des bandes en cours hébergées par la structure.
+     */
+    private void verifierCapaciteStructure(Structure structure, int effectifAAjouter) {
+        Integer capaciteMax = CapaciteStructure.capaciteMaxAnimaux(structure);
+        if (capaciteMax == null) {
+            return; // Type de structure sans capacité exprimée en nombre d'animaux.
+        }
+        long occupationActuelle = occupationActuelle(structure.getId());
+        if (occupationActuelle + effectifAAjouter > capaciteMax) {
+            throw new CapaciteStructureDepasseeException(structure.getNom(), capaciteMax, occupationActuelle, effectifAAjouter);
+        }
+    }
+
+    /** Occupation réelle d'une structure : animaux individuels + effectifs des bandes en cours. */
+    private long occupationActuelle(Long structureId) {
+        long animauxIndividuels = animalRepository.countByStructureId(structureId);
+        Long effectifBandes = bandeRepository.sumEffectifActuelEnCoursByStructureId(structureId);
+        return animauxIndividuels + (effectifBandes != null ? effectifBandes : 0L);
     }
 
     private String genererCodeBande(BandeRequest request) {

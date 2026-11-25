@@ -61,6 +61,17 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(CapaciteStructureDepasseeException.class)
+    public ResponseEntity<Map<String, Object>> badRequest(CapaciteStructureDepasseeException ex, HttpServletRequest request) {
+        Map<String, Object> errorResponse = buildErrorResponse(
+                400,
+                "Bad Request",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(QuantiteInvalideException.class)
     public ResponseEntity<Map<String, Object>> badRequest(QuantiteInvalideException ex, HttpServletRequest request) {
         Map<String, Object> errorResponse = buildErrorResponse(
